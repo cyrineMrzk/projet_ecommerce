@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Food App Admin Portal</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <style>
+        .hidden { display: none; }
+    </style>
+</head>
+<body class="bg-gray-100 h-screen flex items-center justify-center">
+    <div class="max-w-md w-full mx-4">
+        <div class="text-center mb-8">
+            <!-- Logo container with animation -->
+            <div class="w-32 h-32 mx-auto mb-4 transform hover:scale-105 transition-transform duration-300">
+                <div class="bg-red-500 rounded-full p-6">
+                    <div class="relative w-full h-full">
+                        <!-- Simplified map marker shape -->
+                        <div class="absolute inset-0 bg-white rounded-full p-3">
+                            <!-- Fork and spoon icon -->
+                            <div class="flex justify-center items-center h-full">
+                                <div class="w-4 h-12 bg-red-500 rounded-full transform -rotate-45 mx-1"></div>
+                                <div class="w-4 h-12 bg-red-500 rounded-full transform rotate-45 mx-1"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <h2 class="text-3xl font-bold text-gray-800">Admin Portal</h2>
+            <p class="text-gray-600 mt-2">Welcome back! Please login to your account.</p>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow-lg p-8">
+            <div class="flex justify-center space-x-4 mb-8">
+                <button id="loginBtn" class="px-6 py-2 text-red-500 font-semibold border-b-2 border-red-500">Login</button>
+                <button id="registerBtn" class="px-6 py-2 text-gray-500 font-semibold hover:text-red-500 hover:border-b-2 hover:border-red-500 transition-all">Register</button>
+            </div>
+           <!-- Login Form -->
+<form id="loginForm" method="POST">
+    {% csrf_token %}
+    <div class="mb-6">
+        <label class="block text-gray-700 text-sm font-bold mb-2" for="email">
+            Email Address
+        </label>
+        <input class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-red-500" 
+               id="email" 
+               name="email"  
+               type="email" 
+               placeholder="admin@example.com">
+    </div>
+
+    <div class="mb-6">
+        <label class="block text-gray-700 text-sm font-bold mb-2" for="password">
+            Password
+        </label>
+        <input class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-red-500" 
+               id="password" 
+               name="password"  
+               type="password" 
+               placeholder="••••••••">
+    </div>
+
+    <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center">
+            <input type="checkbox" id="remember" name="remember" class="h-4 w-4 text-red-500">
+            <label class="ml-2 text-sm text-gray-700" for="remember">
+                Remember me
+            </label>
+        </div>
+        <a href="#" class="text-sm text-red-500 hover:text-red-600">Forgot Password?</a>
+    </div>
+
+    <button type="submit" name="login" class="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 transition-colors font-semibold">
+        Login
+    </button>
+</form>
+
+<!-- Register Form -->
+<form id="registerForm" method="POST" class="hidden">
+    {% csrf_token %}
+    <div class="mb-6">
+        <label class="block text-gray-700 text-sm font-bold mb-2" for="registerEmail">
+            Email Address
+        </label>
+        <input class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-red-500" 
+               id="registerEmail" 
+               name="registerEmail"  
+               type="email" 
+               placeholder="admin@example.com">
+    </div>
+
+    <div class="mb-6">
+        <label class="block text-gray-700 text-sm font-bold mb-2" for="registerPassword">
+            Password
+        </label>
+        <input class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-red-500" 
+               id="registerPassword" 
+               name="registerPassword" 
+               type="password" 
+               placeholder="••••••••">
+    </div>
+
+    <div class="mb-6">
+        <label class="block text-gray-700 text-sm font-bold mb-2" for="confirmPassword">
+            Confirm Password
+        </label>
+        <input class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-red-500" 
+               id="confirmPassword" 
+               name="confirmPassword" 
+               type="password" 
+               placeholder="••••••••">
+    </div>
+
+    <button type="submit" name="register" class="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 transition-colors font-semibold">
+        Register
+    </button>
+</form>
+
+        </div>
+    </div>
+
+    <script>
+        const loginBtn = document.getElementById('loginBtn');
+        const registerBtn = document.getElementById('registerBtn');
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+
+        loginBtn.addEventListener('click', () => {
+            loginForm.classList.remove('hidden');
+            registerForm.classList.add('hidden');
+            loginBtn.classList.add('text-red-500', 'border-red-500');
+            loginBtn.classList.remove('text-gray-500');
+            registerBtn.classList.remove('text-red-500', 'border-red-500');
+            registerBtn.classList.add('text-gray-500');
+        });
+
+        registerBtn.addEventListener('click', () => {
+            registerForm.classList.remove('hidden');
+            loginForm.classList.add('hidden');
+            registerBtn.classList.add('text-red-500', 'border-red-500');
+            registerBtn.classList.remove('text-gray-500');
+            loginBtn.classList.remove('text-red-500', 'border-red-500');
+            loginBtn.classList.add('text-gray-500');
+        });
+    </script>
+</body>
+</html></button></label>
