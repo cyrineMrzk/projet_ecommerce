@@ -1,0 +1,245 @@
+.productinfo{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 20px;
+    border: 1px solid hsl(0, 0%, 88%);
+    border-radius: 5px;
+    box-shadow: 0 0 5px 0 rgba(0,0,0,0.1);
+    background-color: #fff;
+    height: 100%;
+}
+.productinfo img{
+    margin-top: 10px;
+    width: 100%;
+    height: 400px;
+    border-radius: 5px;
+}
+.productinfo .gallery .thumbnails .thumbnailimg{
+    width: 100px;
+    height: 100px;
+    border-radius: 5px;
+    margin: 5px;
+    cursor: pointer;
+}
+.productinfo .gallery .thumbnails .thumbnailimg:hover{
+    border: 1px solid #2d2e37;
+}
+.productinfo .gallery .thumbnails{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 5px;
+}
+.productinfo .gallery .thumbnails img{
+    width: 100px;
+    height: 100px;
+    border-radius: 5px;
+}
+.productinfo .productdetails{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 20px;
+}
+
+.productinfo .productdetails h2{
+    font-family: 'oswald', sans-serif;
+    font-size: 24px;
+    font-weight: 800;
+    color: #2d2e37;
+}
+.productinfo .productdetails .productdescription{
+    font-family:'poppins', sans-serif;
+    font-size: 16px;
+    font-weight: 400;
+    color: #2d2e37;
+    display: flex;
+    flex-direction: column;
+}
+.productinfo .productdetails .productactions{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.productinfo .productdetails .productdescription .price{
+    font-family: 'oswald', sans-serif;
+    font-size: 24px;
+    font-weight: 800;
+    color: #E63946;
+}
+.productinfo .productdetails .productactions .cartactions{
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    gap: 10px;
+}
+.productinfo .productdetails .productactions .cartactions button{
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    background-color: #000000;
+    color: #ffffff;
+    font-family: 'oswald', sans-serif;
+    font-size: 18px;
+    font-weight: 500;
+    cursor: pointer;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    
+}
+
+.productinfo .productdetails .productactions .cartactions .heart-button{
+    background-color: #fff;
+}
+
+.productinfo .productdetails .productactions .moreinfo{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    font-family: 'poppins', sans-serif;
+}
+.productinfo .productdetails .productactions .moreinfo span, .productinfo .productdetails .productactions .moreinfo button{
+    padding: 5px 20px;
+    border: none;
+    border-radius: 5px;
+    background-color: #ffffff;
+    color: #000000;
+    font-family: 'poppins', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+}
+.productinfo .productdetails .productactions .moreinfo button{
+    align-self: self-end;
+    display: flex;
+}
+.productinfo .productdetails .productactions .colorsselection img{
+    width: 50px;
+    height: 50px;
+    margin: 2px;
+    border: #2d2e37 1px solid;
+    cursor: pointer;
+}
+.productinfo .productdetails .productactions .selected-color-name {
+    font-family: 'poppins', sans-serif;
+    margin: 10px;
+    font-size: 16px;
+    font-weight: 300;
+    color: #2d2e37;
+}
+.productinfo .productdetails .productactions .selected-color {
+    border: 2px solid gold; 
+    padding: 2px;
+    border-radius: 5px;
+}
+.productinfo .productdetails .productactions .sizeselection button{
+    padding: 5px 10px;
+    border: 2px solid #2d2e37;
+    border-radius: 5px;
+    background-color: #ffffff;
+    color: #000000;
+    font-family: 'poppins', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    margin: 2px;
+    width: 100%;
+
+}
+.productinfo .productdetails .size-dropdown {
+    list-style: none;
+    padding: 5px;
+    margin: 0;
+    background: white;
+    border: 1px solid #ccc;
+    position: absolute;
+    z-index: 10;
+    width: 100px;
+}
+
+.productinfo .productdetails .size-dropdown li {
+    padding: 5px;
+    cursor: pointer;
+}
+
+.productinfo .productdetails .size-dropdown li:hover {
+    background: #f0f0f0;
+}
+
+.productinfo .productdetails .productactions .quantityselection{
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+    align-items: center;
+    width: 100%;
+    justify-content: center;
+}
+.productinfo .productdetails .productactions .quantityselection button{
+    padding: 5px 10px;
+    border: 2px solid #2d2e37;
+    border-radius: 5px;
+    background-color: #ffffff;
+    color: #000000;
+    font-family: 'poppins', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+}
+.productinfo .productdetails .productactions .quantityselection input{
+    padding: 5px 10px;
+    border: 2px solid #2d2e37;
+    border-radius: 5px;
+    background-color: #ffffff;
+    color: #000000;
+    font-family: 'poppins', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    width: 50px;
+    text-align: center;
+}
+
+  .productinfo .moreinfo {
+    margin-top: 20px;
+    border-top: 1px solid #ccc;
+    padding-top: 10px;
+  }
+  
+  .productinfo .moreinfo span {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .productinfo .moreinfo button {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    font-weight: bold;
+    color: #000;
+    transition: transform 0.2s ease-in-out;
+  }
+  
+  .productinfo .moreinfo .info-content {
+    padding: 10px;
+    font-size: 16px;
+    color: #555;
+    line-height: 1.5;
+    background-color: #f9f9f9;
+    border-left: 4px solid #a58a27; /* Accent color */
+    margin: 5px 0 10px;
+    display: block;
+  }

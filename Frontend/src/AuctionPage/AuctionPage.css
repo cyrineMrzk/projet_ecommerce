@@ -1,0 +1,193 @@
+
+.auction-product {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 20px;
+    border: 1px solid hsl(0, 0%, 88%);
+    border-radius: 5px;
+    box-shadow: 0 0 5px 0 rgba(0,0,0,0.1);
+    background-color: #fff;
+    padding: 20px;
+    max-width: 900px;
+    margin: auto;
+}
+
+.auction-product .gallery {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.auction-product img {
+    width: 100%;
+    max-height: 400px;
+    border-radius: 5px;
+    object-fit: cover;
+}
+
+.auction-product .gallery .thumbnails {
+    display: flex;
+    gap: 10px;
+}
+
+.auction-product .gallery .thumbnails .thumbnail-img {
+    width: 80px;
+    height: 80px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.auction-product .gallery .thumbnails .thumbnail-img:hover {
+    border: 2px solid #1c1818;
+}
+
+.auction-product .product-details {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 20px;
+}
+
+.auction-product .product-details h2 {
+    font-family: 'Oswald', sans-serif;
+    font-size: 24px;
+    font-weight: 800;
+    color: #2d2e37;
+}
+
+.auction-product .product-details .product-description {
+    font-family: 'Poppins', sans-serif;
+    font-size: 16px;
+    color: #2d2e37;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.auction-product .product-details .current-bid {
+    font-size: 22px;
+    font-weight: 800;
+    color: #E63946;
+}
+
+.auction-product .product-details .auction-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.auction-product .product-details .auction-actions .bid-selection {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.auction-product .product-details .auction-actions .bid-selection input {
+    padding: 8px 10px;
+    border: 2px solid #2d2e37;
+    border-radius: 5px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 16px;
+    width: 100px;
+    text-align: center;
+}
+
+.auction-product .product-details .auction-actions .bid-button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    background-color: #000000;
+    color: #ffffff;
+    font-family: 'Oswald', sans-serif;
+    font-size: 18px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.auction-product .product-details .auction-actions .bid-button:hover {
+    background-color: #E63946;
+}
+
+.auction-product .wishlist .heart-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.auction-product .wishlist .heart-button:hover {
+    transform: scale(1.1);
+}
+
+.auction-product .more-info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.auction-product .more-info span {
+    font-weight: bold;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 5px 20px;
+    border: none;
+    border-radius: 5px;
+    background-color: #ffffff;
+    color: #000000;
+    font-family: 'poppins', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+}
+.auction-product .more-info button{
+    padding: 5px 20px;
+    border: none;
+    border-radius: 5px;
+    background-color: #ffffff;
+    color: #000000;
+    font-family: 'poppins', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    align-self: self-end;
+    display: flex;
+}
+
+.auction-product .more-info .info-content {
+    font-size: 14px;
+    color: #555;
+    margin-top: 5px;
+    padding: 10px;
+    font-size: 16px;
+    color: #555;
+    line-height: 1.5;
+    background-color: #f9f9f9;
+    border-left: 4px solid #a58a27; /* Accent color */
+    margin: 5px 0 10px;
+    display: block;
+}
+
+@media (max-width: 768px) {
+    .auction-product {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .auction-product .gallery .thumbnails {
+        justify-content: center;
+    }
+
+    .auction-product .product-details {
+        align-items: center;
+    }
+}

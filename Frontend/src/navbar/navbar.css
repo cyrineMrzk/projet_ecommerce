@@ -1,0 +1,213 @@
+.navbar {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background-color: #f8f9fa;
+    padding: 0;
+    margin: 0;
+}
+
+.first-nav {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    background-color: #f8f9fa;
+}
+
+.first-nav .logo a {
+    color: #3643ba;
+    font-family: "Oswald", sans-serif;
+    font-weight: 700;
+    font-style: normal;
+}
+
+.first-nav .search {
+    position: relative;
+    display: flex;
+    align-items: center;
+    border: 2px solid #ccc;
+    border-radius: 50px;
+    padding: 5px;
+    width: 40%;
+    background-color: #E5E5E5;
+}
+
+.first-nav .search input {
+    border: none;
+    outline: none;
+    border-radius: 10px;
+    padding: 8px 30px 8px 10px;
+    width: 100%;
+    font-size: 16px;
+    background-color: #E5E5E5;
+}
+
+.first-nav .search-icon {
+    position: absolute;
+    right: 20px;
+    color: #3643ba;
+    cursor: pointer;
+}
+
+.first-nav ul {
+    display: flex;
+    flex-direction: row;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.first-nav ul li {
+    margin: 0 10px;
+    size: 50px;
+    width: 50px;
+}
+
+/* User Dropdown */
+.user-menu {
+    position: relative;
+    display: flex;
+    align-items: center;
+    
+}
+.user-icon-container {
+    cursor: pointer;
+    
+}
+
+
+.dropdown-menu {
+    position: absolute;
+    top: 70px; /* Position under the icon */
+    right: 10px;
+    width: 280px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    z-index: 1000;
+    border: 1px solid #ddd;
+}
+
+.dropdown-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 10px;
+}
+
+.navbar .menu-item:hover {
+    background: #f1f1f1;
+}
+
+.navbar .new {
+    font-weight: bold;
+    color: #3643ba;
+}
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: transparent;
+    border: 1px solid #3643ba;
+    color: #3643ba;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.dropdown-header p {
+    font-size: 12px;
+    color: #555;
+    margin: 0;
+}
+.dropdown-menu a, .dropdown-menu button {
+    text-decoration: none;
+    color: #333;
+    padding: 10px;
+    font-size: 14px;
+    text-align: left;
+    background: none;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+}
+.dropdown-menu .menu-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    text-decoration: none;
+    color: black;
+    transition: background 0.2s;
+}
+
+.dropdown-menu a:hover, .dropdown-menu button:hover {
+    background: #f1f1f1;
+}
+
+.logout-btn {
+    color: red;
+    font-weight: bold;
+}
+
+/* Second Navbar */
+.second-nav ul {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+}
+
+.second-nav ul li {
+    list-style: none;
+    margin: 0px 30px;
+    text-align: center;
+}
+
+.second-nav ul li a, .first-nav a {
+    text-decoration: none;
+    color: #333333;
+    font-weight: lighter;
+}
+
+.second-nav ul li .active-link {
+    color: #3643ba;
+    font-weight: bold;
+}
+
+.second-nav ul li .active-link::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -3px;
+    width: 100%;
+    height: 2px;
+    background-color: #3643ba;
+    transition: width 0.3s ease-in-out;
+}
+
+.second-nav ul li a::after {
+    content: "";
+    display: block;
+    width: 0;
+    height: 2px;
+    background-color: #3643ba;
+    transition: width 0.3s;
+}
+
+.second-nav ul li a:hover::after {
+    content: "";
+    display: block;
+    width: 100%;
+    height: 2px;
+    background-color: #3643ba;
+    margin-top: 5px;
+}
+
+.second-nav ul li a:hover {
+    color: #3643ba;
+}

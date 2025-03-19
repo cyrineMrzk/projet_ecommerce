@@ -1,0 +1,51 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@200;300;400;500;600;700&display=swap');
+.footer-container{
+    position:static;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: #3643BA;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+
+
+}
+.footer-container span{
+    font-family: 'poppins', sans-serif;
+    font-size: 12px;
+    font-weight: 300;
+    align-self: center;
+}
+.footer{
+    background-color: #3643BA;
+    color: white;
+    display: flex;
+    justify-content: space-around;
+    
+}
+.footer .footer-links{
+    display: flex;
+    flex-direction: column;
+    margin-left: 20px;
+    margin-top: 20px;
+}
+.footer .footer-links a{
+    color: white;
+    text-decoration: none;
+    margin-bottom: 10px;
+    font-weight: 400;
+    font-family: 'poppins', sans-serif;
+    font-size: 14px;
+}
+.footer .footer-links a:hover{
+    color: #4e4e4ea5;
+}
+.footer .footer-links h3{
+    font-family: 'oswald', sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}

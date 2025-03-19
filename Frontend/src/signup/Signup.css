@@ -1,0 +1,54 @@
+.photo{position: relative;
+    width: 100vw;
+    height: 100vh;
+  }
+  .container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px; /* Espace entre les éléments */
+  }
+  .box1 {
+    width: 185px;
+    height: 40px;
+    border: 1px solid #ccc;
+    padding: auto;
+    border-radius: 30px;
+    position: relative;
+    bottom: 10px;
+  }
+  
+  .Creat{
+    color: white;
+    text-align: center;
+    font-size: 32px;
+    font-family: "Oswald", sans-serif;
+    position: relative;
+    bottom: 5px;
+  }
+  
+  .already{
+  color: white;
+  text-align: center;
+  position: relative;
+  right: 15%
+  }
+  
+  .labe{
+    color: white;
+    display: block;
+    margin-bottom: 5px;
+  }
+  .le_cote{
+    position: absolute; /* Superpose le formulaire */
+    top: 50%;
+    left:20%;
+    transform: translate(-30%, -50%); /* Centre parfaitement */
+    background: rgba(255, 255, 255, 0.1); /* Ajoute un fond semi-transparent */
+    padding: 5px;
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+    text-align: center;  
+    width: 500px;
+    height: 550px;
+}

@@ -1,0 +1,31 @@
+.auctions-page {
+    /*text-align: center;
+    padding: 20px;
+    background-color: #f5f5f5;
+    min-height: 100vh;*/
+    max-width: 1000px;
+    margin: 40px auto;
+    padding: 20px;
+    text-align: center;
+}
+
+.auctions-page h1 {
+    font-size: 2rem;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.auctions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    justify-content: center;
+    padding: 20px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .auctions-grid {
+        grid-template-columns: 1fr;
+    }
+}

@@ -1,0 +1,68 @@
+.photo{position: relative;
+    width: 100vw;
+    height: 100vh;
+}
+
+
+.welcomeback{color: white;
+text-align: center;
+font-size: 28px;
+font-family: "Oswald", sans-serif;
+font-weight: 700;
+}
+
+.otherlogin{color: white;
+    text-align: center;
+    font-size: 24px;
+    font-family: "Poppins", sans-serif;
+    font-weight: 600;
+    position: relative;
+    bottom: 4%
+}
+
+.udonthave{color: white;
+text-align: center;
+position: relative;
+bottom: 5%;
+right: 10%;} 
+
+
+.login {
+    background-color: rgb(47, 47, 247);
+    color: white;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 175px;
+    height: 40px;
+    border-radius: 30px;
+    position: relative;
+    top: 5px;
+  }
+
+  .login:hover {
+    background-color: darkblue;
+  }
+
+.box{
+    width: 400px;
+    height: 40px;
+    border: 1px solid #ccc;
+    padding: auto;
+    border-radius: 30px;
+    position: relative;
+    top: 5px;
+}
+.le_cote{
+    position: absolute; /* Superpose le formulaire */
+    top: 50%;
+    left:20%;
+    transform: translate(-30%, -50%); /* Centre parfaitement */
+    background: rgba(255, 255, 255, 0.1); /* Ajoute un fond semi-transparent */
+    padding: 5px;
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+    text-align: center;  
+    width: 500px;
+}

@@ -1,0 +1,85 @@
+.reviews-section {
+    max-width: 800px;
+    margin: auto;
+    font-family: Arial, sans-serif;
+}
+
+.reviews-section  h2 {
+    font-family: 'oswald', sans-serif;
+    font-size: 35px;
+    font-weight: 600;
+}
+
+.reviews-section .review-summary {
+    margin: 10px 0;
+    font-size: 16px;
+}
+
+.reviews-section .stars {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.reviews-section .star-icon {
+    color: black;
+    font-size: 18px;
+}
+
+.reviews-section .rating {
+    font-weight: bold;
+    margin-left: 5px;
+}
+
+.reviews-section .total-reviews {
+    color: gray;
+}
+
+.reviews-section .write-review-btn {
+    padding: 8px 16px;
+    border: 2px solid black;
+    background: white;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    margin-top: 10px;
+    transition: 0.2s;
+}
+
+.reviews-section .write-review-btn:hover {
+    background: black;
+    color: white;
+}
+
+.reviews-section .review {
+    padding: 10px 0;
+}
+
+.reviews-section hr {
+    border: none;
+    border-top: 1px solid black;
+    margin: 10px 0;
+}
+
+.reviews-section .review h3 {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.reviews-section .review-content {
+    font-size: 14px;
+    color: gray;
+}
+
+.reviews-section .review-user {
+    display: block;
+    font-size: 12px;
+    color: black;
+    margin-top: 5px;
+}
+
+.reviews-section .recommend {
+    float: right;
+    font-size: 12px;
+    font-weight: bold;
+}

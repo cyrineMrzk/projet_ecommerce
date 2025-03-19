@@ -1,0 +1,240 @@
+/*.contact-container {
+    font-family: 'Arial', sans-serif;
+    text-align: center;
+    padding: 40px 20px;
+    max-width: 900px;
+    margin: auto;
+}
+.contact-title {
+    font-family: 'oswald',sans-serif;
+    font-size: 2.2rem;
+    font-weight: bold;
+    margin-bottom: 20px;
+    text-align: center;
+}
+.contact-content {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+.contact-form {
+    flex: 1;
+    min-width: 300px;
+    background: #f5f5f5;
+    padding: 30px;
+    border-radius: 10px;
+    text-align: left;
+    margin: 10px;
+}
+.contact-form h3 {
+    font-family: 'oswald',sans-serif;
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+}
+.contact-form p {
+    font-family: 'Poppins',sans-serif;
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 15px;
+}
+.contact-form input, 
+.contact-form textarea {
+    font-family: 'poppins',sans-serif;
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 1rem;
+}
+.contact-form textarea {
+    height: 80px;
+}
+.send-button {
+    width: 100%;
+    background: #3643BA;
+    color: white;
+    font-size: 1rem;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+.send-button:hover {
+    background: #3457D5;
+}
+.contact-details {
+    flex: 1;
+    min-width: 300px;
+    padding: 20px;
+    text-align: left;
+}
+.contact-details h3 {
+    font-family: 'oswald',sans-serif;
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+}
+.contact-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    
+}
+.contact-container .contact-item .icon-container{
+    background: #000;
+}
+.contact-item .icon {
+    font-size: 1.5rem;
+    margin-right: 10px;
+    color: #4169E1;
+}
+.social-media {
+    margin-top: 15px;
+}
+.social-btn {
+    background: black;
+    color: white;
+    border: none;
+    font-size: 1.5rem;
+    padding: 10px;
+   
+    cursor: pointer;
+    transition: 0.3s;
+}
+.social-btn:hover {
+    background: #333;
+}*/
+/* Main Contact Page Styling */
+.contact-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 40px;
+    padding: 50px;
+    background-color: #f8f9fa;
+    color: rgb(0, 0, 0);
+    
+}
+
+.contact-form {
+    flex: 1;
+    min-width: 350px;
+    background: rgba(255, 255, 255, 0.671);
+    padding: 45px;
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+
+}
+
+.contact-form h2 {
+    font-family: 'oswald',sans-serif;
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+}
+
+.contact-form p {
+    font-family: 'Poppins',sans-serif;
+    font-size: 1rem;
+    font-weight: 300;
+    margin-bottom: 20px;
+}
+
+.input-group {
+    position: relative;
+    margin-bottom: 15px;
+}
+
+.input-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #bbb;
+}
+
+.contact-form input,
+.contact-form textarea {
+    font-family: 'Poppins',sans-serif;
+    width: 90%;
+    padding: 12px 15px 12px 35px;
+    border: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    background-color: #f8f9fa;
+}
+
+.contact-form textarea {
+    height: 100px;
+}
+
+.send-button {
+    font-family: 'oswald',sans-serif;
+    width: 100%;
+    padding: 12px;
+    border: none;
+    background: #3643BA;
+    color: rgb(255, 255, 255);
+    font-size: 1rem;
+    font-weight: bold;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.send-button:hover {
+    background: #3643ba89;
+}
+
+/* Contact Details Section */
+.contact-details {
+    flex: 1;
+    min-width: 350px;
+}
+
+.contact-details h2 {
+    font-family: 'oswald',sans-serif;
+    font-weight: bold;
+    font-size: 1.8rem;
+    margin-bottom: 15px;
+}
+
+.contact-card {
+    display: flex;
+    align-items: center;
+    background: #ffffff;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.icon {
+    font-size: 1.5rem;
+    margin-right: 15px;
+    color:#3643BA;
+}
+
+
+.social-media {
+    margin-top: 20px;
+}
+
+.social-media h3 {
+    font-family: 'poppins',sans-serif;
+    font-size: 1.4rem;
+    margin-bottom: 10px;
+}
+
+.social-btn {
+    display: inline-block;
+    font-size: 1.8rem;
+    background: black;
+    color: white;
+    padding: 10px;
+    border-radius: 50%;
+    transition: 0.3s;
+}
+
+.social-btn:hover {
+    background: #333;
+}

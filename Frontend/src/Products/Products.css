@@ -1,0 +1,98 @@
+.products-page {
+    max-width: 1000px;
+    margin: 40px auto;
+    padding: 20px;
+    text-align: center;
+    
+}
+
+.products-page h1 {
+    font-size: 24px;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+/* Filter Toggle Button */
+.products-page .filter-toggle-btn {
+    align-self: flex-end;
+    display: flex;
+background-color: rgba(230, 225, 225, 0.495);
+    color: rgb(2, 2, 2);
+    padding: 10px 15px;
+    border: black solid 1px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+}
+
+.products-page .filter-toggle-btn:hover {
+    background-color: #ccc;
+}
+
+
+.products-page .filter-panel {
+    position: fixed;
+    left: -300px;
+    top: 0;
+    width: 250px;
+    height: 100%;
+    background-color: #f8f9fa;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    transition: left 0.3s ease-in-out;
+}
+
+
+.products-page .filter-panel.open {
+    left: 0;
+    
+}
+
+.products-page .filter {
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+}
+
+.products-page label {
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.products-page select,.products-page input[type="range"] {
+    padding: 6px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    cursor: pointer;
+    
+}
+
+
+.products-page .sort {
+    margin-bottom: 20px;
+}
+
+.sort select {
+    padding: 6px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+
+.products-page .products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+    padding: 20px 0;
+}
+
+
+.products-page .no-products {
+    font-size: 18px;
+    color: #777;
+    margin-top: 20px;
+}

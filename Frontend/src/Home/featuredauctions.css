@@ -1,0 +1,36 @@
+.featured-auctions {
+    text-align: center;
+    padding: 40px 20px;
+    
+}
+
+.featured-auctions h2.title {
+    font-size: 35px;
+    font-family: 'oswald', sans-serif;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+.auction-container {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+.see-all-button {
+    margin-top: 20px;
+    padding: 12px 24px;
+    font-family: 'oswald', sans-serif;
+    font-size: 18px;
+    font-weight: bold;
+    background-color: #0047ab;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s ease-in-out;
+}
+
+.see-all-button:hover {
+    background-color: #00338d;
+}

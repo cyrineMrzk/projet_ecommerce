@@ -1,0 +1,12 @@
+.background-container {
+    background-image: url("../images/Back.jpg"); /* Chemin de l’image */    
+    background-size: cover; /* Remplit tout le background sans déformation */
+    background-position: center; /* Centre l’image */
+    background-repeat: no-repeat; /* Empêche la répétition */
+    width: 100vw; /* Largeur = toute la fenêtre */
+    height: 100vh; /* Hauteur = toute la fenêtre */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+}
