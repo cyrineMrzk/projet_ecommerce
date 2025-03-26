@@ -58,64 +58,33 @@ def login_view(request):
 
     return Response({"error": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST)
 
+@csrf_exempt  # Disable CSRF for testing (use proper authentication in production)
 def create_product(request):
-    if request.method == 'POST':
-        # Validate required fields
-        name = request.POST.get('name')
-        description = request.POST.get('description')
-        category = request.POST.get('category')
-        price = request.POST.get('price')
-        sale_type = request.POST.get('sale_type')
-        
-        # Add validation
-        if not all([name, description, category, price, sale_type]):
-            return JsonResponse({'error': 'Missing required fields'}, status=400)
-        
-        # Validate category against choices
-        valid_categories = [
-            'Gym Equipment', 
-            'Cardio & Endurance', 
-            'Supplements', 
-            'Accessories'
-        ]
-        if category not in valid_categories:
-            return JsonResponse({'error': 'Invalid category'}, status=400)
-        
-        # Validate sale type
-        valid_sale_types = ['SellNow', 'Auction']
-        if sale_type not in valid_sale_types:
-            return JsonResponse({'error': 'Invalid sale type'}, status=400)
-        
-        # Get uploaded images
-        images = request.FILES.getlist('images')
-        if len(images) < 3:
-            return JsonResponse({'error': 'At least 3 images are required'}, status=400)
-        
-        try:
-            # Create the product
+    if request.method == "POST":
+        if request.FILES.get("image") and request.POST.get("name"):
+            image = request.FILES["image"]
+            image_path = default_storage.save(f"product_images/{image.name}", image)  # Saves the image
+
+            # Extract other data
+            data = request.POST
+            user = get_user_model().objects.get(id=1)  # Replace with actual user authentication
+
             product = Product.objects.create(
-                name=name,
-                description=description,
-                category=category,
-                price=price,
-                sale_type=sale_type,
-                owner=request.user,  # Assuming user authentication
-                # Add other fields as needed
+                name=data.get("name"),
+                owner=user,
+                brand=data.get("brand", ""),
+                sex=data.get("sex", "unisex"),
+                colors=json.loads(data.get("colors", "[]")),  # Expecting JSON string
+                sizes=json.loads(data.get("sizes", "[]")),
+                price=float(data.get("price", 0)),
+                description=data.get("description", ""),
+                category=data.get("category", "Accessories"),
+                sale_type=data.get("sale_type", "SellNow"),
+                images=image_path
             )
-            
-            # Handle multiple image uploads
-            for image in images:
-                ProductImage.objects.create(
-                    product=product,
-                    image=image
-                )
-            
-            return JsonResponse({
-                'message': 'Product created successfully', 
-                'product_id': product.id
-            }, status=201)
-        
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-    
-    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+            return JsonResponse({"message": "Product created successfully", "product_id": product.id}, status=201)
+
+        return JsonResponse({"error": "Invalid data"}, status=400)
+
+    return JsonResponse({"error": "Invalid request method"}, status=405)
