@@ -4,7 +4,7 @@ from rest_framework import status
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from .serializers import UserSerializer
-from django.http import JsonResponse
+from django.http import JsonResponse,HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.files.storage import default_storage
 import json
@@ -83,8 +83,43 @@ def create_product(request):
                 images=image_path
             )
 
+            product.save()
+
             return JsonResponse({"message": "Product created successfully", "product_id": product.id}, status=201)
 
         return JsonResponse({"error": "Invalid data"}, status=400)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
+
+
+def debug(request):
+
+    user = get_user_model().objects.first()  # Make sure you're using a valid user
+
+    data = {
+        'name': 'hiba',
+        'owner': user,  # Ensure it's a valid user
+        'brand': 'Nike',
+        'sex': 'unisex',
+        'colors': '["red"]',  # Make sure it’s a valid JSON string
+        'sizes': '["S"]',
+        'price': '100',
+        'description': 'description',
+        'category': 'Accessories',
+        'sale_type': "SellNow",
+    }
+
+    product = Product.objects.create(
+        name=data.get("name"),
+        owner=data.get("owner"),
+        brand=data.get("brand"),
+        sex=data.get("sex", "unisex"),
+        colors=json.loads(data.get("colors", "[]")),
+        sizes=json.loads(data.get("sizes", "[]")),
+        price=float(data.get("price", 0)),
+        description=data.get("description", ""),
+        category=data.get("category", "Accessories"),
+        sale_type=data.get("sale_type", "SellNow"),
+    )
+
+    return HttpResponse("ok")
