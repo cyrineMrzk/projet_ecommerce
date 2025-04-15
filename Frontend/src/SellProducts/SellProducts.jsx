@@ -1,15 +1,19 @@
 import './SellProducts.css';
-import { useState } from "react";
+import { useState, useEffect } from "react";  // Add useEffect here
+import { useNavigate } from "react-router-dom";
 
 export default function SellProducts() {
+    const navigate = useNavigate();
     const [product, setProduct] = useState({
         name: "",
+        brand: "",
+        sex: "unisex",
+        colors: [],
+        sizes: [],
         description: "",
         category: "",
         price: "",
-        saleType: "sell",
-        auctionStartPrice: "",
-        auctionDuration: "",
+        saleType: "SellNow",
         images: []
     });
 
@@ -19,7 +23,15 @@ export default function SellProducts() {
     });
 
     const [successMessage, setSuccessMessage] = useState("");
-
+    
+    // Check if user is logged in
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        if (!token) {
+            navigate("/login", { state: { message: "Please login to list products" } });
+        }
+    }, [navigate]);
+    
     const categories = ["Gym equipement", "Cardio & Endurance", "Supplements", "Accessoires"];
 
     const handleChange = (e) => {
@@ -35,8 +47,8 @@ export default function SellProducts() {
         const files = Array.from(e.target.files);
         const newImages = [...product.images, ...files];
 
-        if (newImages.length < 3) {
-            setErrors({ ...errors, images: "Please upload at least 3 images." });
+        if (newImages.length < 1) {
+            setErrors({ ...errors, images: "Please upload at least 1 image." });
         } else {
             setErrors({ ...errors, images: "" });
         }
@@ -44,76 +56,87 @@ export default function SellProducts() {
         setProduct({ ...product, images: newImages });
     };
 
-    const handleSubmit = async (e) => {
+    const handleListSubmit = async (e) => {
         e.preventDefault();
-    
+
         let newErrors = { images: "", category: "" };
-    
-        if (product.images.length < 3) {
-            newErrors.images = "Please upload at least 3 images.";
+
+        if (product.images.length < 1) {
+            newErrors.images = "Please upload at least 1 image.";
         }
         if (!product.category) {
             newErrors.category = "Please select a category.";
         }
-    
+
         setErrors(newErrors);
-    
+
         if (newErrors.images || newErrors.category) {
             return;
         }
-    
-        // Create FormData object
+
         const formData = new FormData();
         formData.append("name", product.name);
+        formData.append("brand", product.brand);
+        formData.append("sex", product.sex);
+        formData.append("colors", JSON.stringify(product.colors));
+        formData.append("sizes", JSON.stringify(product.sizes));
         formData.append("description", product.description);
         formData.append("category", product.category);
-        formData.append("price", product.price);
         formData.append("sale_type", product.saleType);
-        
-        // Append images
-        product.images.forEach((image) => {
-            formData.append("images", image);
-        });
-    
+        formData.append("price", product.price);
+        formData.append("image", product.images[0]);
+
         try {
+            const token = localStorage.getItem("token");
             const response = await fetch("http://127.0.0.1:8000/api/products/", {
                 method: "POST",
-                body: formData,
                 headers: {
-                    // Do NOT set Content-Type; fetch will handle it automatically
-                    Authorization: `Bearer YOUR_ACCESS_TOKEN`, // If using authentication
+                    "Authorization": `Token ${token}` // Add this line
                 },
+                body: formData
             });
-    
+
             if (!response.ok) {
                 throw new Error("Failed to upload product.");
             }
-    
+
             setSuccessMessage("Product listed successfully!");
             setTimeout(() => setSuccessMessage(""), 3000);
-    
+
             setProduct({
                 name: "",
+                brand: "",
+                sex: "unisex",
+                colors: [],
+                sizes: [],
                 description: "",
                 category: "",
                 price: "",
-                saleType: "sell",
-                auctionStartPrice: "",
-                auctionDuration: "",
-                images: [],
+                saleType: "SellNow",
+                images: []
             });
         } catch (error) {
             console.error("Error uploading product:", error);
         }
     };
-    
+
     return (
         <div className="sell-product">
             <h1>List Your Product</h1>
             {successMessage && <p className="success-message">{successMessage}</p>}
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleListSubmit}>
                 <label>Product Name</label>
                 <input type="text" name="name" value={product.name} onChange={handleChange} required />
+
+                <label>Brand</label>
+                <input type="text" name="brand" value={product.brand} onChange={handleChange} required />
+
+                <label>Sex</label>
+                <select name="sex" value={product.sex} onChange={handleChange} required>
+                    <option value="unisex">Unisex</option>
+                    <option value="men">Men</option>
+                    <option value="women">Women</option>
+                </select>
 
                 <label>Description</label>
                 <textarea name="description" value={product.description} onChange={handleChange} required></textarea>
@@ -130,35 +153,26 @@ export default function SellProducts() {
                 <label>Choose Sale Type</label>
                 <div className="sale-options">
                     <label>
-                        <input type="radio" name="saleType" value="sell" checked={product.saleType === "sell"} onChange={handleChange} />
+                        <input type="radio" name="saleType" value="SellNow" checked={product.saleType === "SellNow"} onChange={handleChange} />
                         Sell Now
                     </label>
                     <label>
-                        <input type="radio" name="saleType" value="auction" checked={product.saleType === "auction"} onChange={handleChange} />
+                        <input type="radio" name="saleType" value="Auction" checked={product.saleType === "Auction"} onChange={handleChange} />
                         Auction
                     </label>
                 </div>
 
-                {product.saleType === "SellNow" && (
-    <>
-        <label>Price (Da)</label>
-        <input type="number" name="price" value={product.price} onChange={handleChange} required />
-    </>
-)}
+                <label>Price (Da)</label>
+                <input type="number" name="price" value={product.price} onChange={handleChange} required />
 
-{product.saleType === "Auction" && (
-    <>
-        <label>Starting Bid (Da)</label>
-        <input type="number" name="auctionStartPrice" value={product.auctionStartPrice} onChange={handleChange} required />
+                <label>Colors (comma separated)</label>
+                <input type="text" placeholder="e.g. red,blue" onChange={(e) => setProduct({ ...product, colors: e.target.value.split(',') })} />
 
-        <label>Auction Duration (Days)</label>
-        <input type="number" name="auctionDuration" value={product.auctionDuration} onChange={handleChange} required />
-    </>
-)}
+                <label>Sizes (comma separated)</label>
+                <input type="text" placeholder="e.g. S,M,L" onChange={(e) => setProduct({ ...product, sizes: e.target.value.split(',') })} />
 
-
-                <label>Upload Images (Min: 3)</label>
-                <input type="file" multiple accept="image/*" onChange={handleFileChange} />
+                <label>Upload Image</label>
+                <input type="file" accept="image/*" onChange={handleFileChange} />
                 {errors.images && <p className="error-message">{errors.images}</p>}
 
                 <button type="submit">List Product</button>
@@ -166,11 +180,9 @@ export default function SellProducts() {
 
             {product.images.length > 0 && (
                 <div className="image-preview">
-                    <h3>Uploaded Images</h3>
+                    <h3>Image Preview</h3>
                     <div className="image-grid">
-                        {product.images.map((file, index) => (
-                            <img key={index} src={URL.createObjectURL(file)} alt={`Preview ${index + 1}`} />
-                        ))}
+                        <img src={URL.createObjectURL(product.images[0])} alt="Preview" />
                     </div>
                 </div>
             )}

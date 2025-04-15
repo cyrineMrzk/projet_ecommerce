@@ -35,6 +35,7 @@ export default function Signup() {
         if (response.ok) {
           setMessage("User registered successfully!");
           localStorage.setItem("user", JSON.stringify(data.user));  // 🔹 Save user info
+          localStorage.setItem("token", data.token); 
           navigate("/", { state: { user: data.user } });
       } else {
             setMessage("Error: " + JSON.stringify(data));

@@ -25,6 +25,7 @@ export default function Login() {
     console.log("Login Response:", data); 
     if (response.ok) {
       localStorage.setItem("user", JSON.stringify(data.user)); 
+      localStorage.setItem("token", data.token); 
       navigate('/', { state: { user: data.user } }); // Redirect to home page
     } else {
       setError(data.error || 'Invalid credentials');

@@ -1,23 +1,31 @@
-from rest_framework.decorators import api_view
+import traceback
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from .serializers import UserSerializer
-from django.http import JsonResponse,HttpResponse
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.files.storage import default_storage
 import json
 from .models import Product
-from django.contrib.auth import get_user_model
 
 @api_view(['POST'])
 def register(request):
     serializer = UserSerializer(data=request.data)
     if serializer.is_valid():
         user = serializer.save()
+        
+        # Create token for the user
+        from rest_framework.authtoken.models import Token
+        token, created = Token.objects.get_or_create(user=user)
+        
         return Response({
             "message": "User created successfully!",
+            "token": token.key,  # Return the token
             "user": {
                 "id": user.id,
                 "first_name": user.first_name,
@@ -45,81 +53,144 @@ def login_view(request):
     authenticated_user = authenticate(username=user.username, password=password)  
 
     if authenticated_user is not None:
+        # Create or get token
+        from rest_framework.authtoken.models import Token
+        token, created = Token.objects.get_or_create(user=authenticated_user)
+        
         return Response({
             "message": "Login successful!",
+            "token": token.key,
             "user": {
                 "id": user.id,
                 "username": user.username,
                 "email": user.email,
-                "first_name": user.first_name,  # ✅ Add this
-                "last_name": user.last_name    # ✅ Add this
+                "first_name": user.first_name,
+                "last_name": user.last_name
             }
         }, status=status.HTTP_200_OK)
 
     return Response({"error": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST)
-
-@csrf_exempt  # Disable CSRF for testing (use proper authentication in production)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def create_product(request):
-    if request.method == "POST":
-        if request.FILES.get("image") and request.POST.get("name"):
-            image = request.FILES["image"]
-            image_path = default_storage.save(f"product_images/{image.name}", image)  # Saves the image
+    if request.FILES.get("image") and request.POST.get("name"):
+        image = request.FILES["image"]
+        image_path = default_storage.save(f"product_images/{image.name}", image)  # Saves the image
 
-            # Extract other data
-            data = request.POST
-            user = get_user_model().objects.get(id=1)  # Replace with actual user authentication
+        # Extract other data
+        data = request.POST
+        user = request.user  # Get the authenticated user
 
-            product = Product.objects.create(
-                name=data.get("name"),
-                owner=user,
-                brand=data.get("brand", ""),
-                sex=data.get("sex", "unisex"),
-                colors=json.loads(data.get("colors", "[]")),  # Expecting JSON string
-                sizes=json.loads(data.get("sizes", "[]")),
-                price=float(data.get("price", 0)),
-                description=data.get("description", ""),
-                category=data.get("category", "Accessories"),
-                sale_type=data.get("sale_type", "SellNow"),
-                images=image_path
-            )
+        product = Product.objects.create(
+            name=data.get("name"),
+            owner=user,
+            brand=data.get("brand", ""),
+            sex=data.get("sex", "unisex"),
+            colors=json.loads(data.get("colors", "[]")),  # Expecting JSON string
+            sizes=json.loads(data.get("sizes", "[]")),
+            price=float(data.get("price", 0)),
+            description=data.get("description", ""),
+            category=data.get("category", "Accessories"),
+            sale_type=data.get("sale_type", "SellNow"),
+            images=image_path
+        )
 
-            product.save()
+        product.save()
 
-            return JsonResponse({"message": "Product created successfully", "product_id": product.id}, status=201)
+        return JsonResponse({"message": "Product created successfully", "product_id": product.id}, status=201)
 
-        return JsonResponse({"error": "Invalid data"}, status=400)
+    return JsonResponse({"error": "Invalid data"}, status=400)
 
-    return JsonResponse({"error": "Invalid request method"}, status=405)
-
-
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def debug(request):
-
-    user = get_user_model().objects.first()  # Make sure you're using a valid user
-
-    data = {
-        'name': 'hiba',
-        'owner': user,  # Ensure it's a valid user
-        'brand': 'Nike',
-        'sex': 'unisex',
-        'colors': '["red"]',  # Make sure it’s a valid JSON string
-        'sizes': '["S"]',
-        'price': '100',
-        'description': 'description',
-        'category': 'Accessories',
-        'sale_type': "SellNow",
-    }
-
-    product = Product.objects.create(
-        name=data.get("name"),
-        owner=data.get("owner"),
-        brand=data.get("brand"),
-        sex=data.get("sex", "unisex"),
-        colors=json.loads(data.get("colors", "[]")),
-        sizes=json.loads(data.get("sizes", "[]")),
-        price=float(data.get("price", 0)),
-        description=data.get("description", ""),
-        category=data.get("category", "Accessories"),
-        sale_type=data.get("sale_type", "SellNow"),
-    )
-
-    return HttpResponse("ok")
+    """
+    Debug endpoint to test GET products.
+    """
+    try:
+        # Fetch all products
+        products = Product.objects.all()
+        
+        # Convert products to a list of dictionaries
+        products_data = []
+        for product in products:
+            # Convert ImageField to string URL
+            image_url = None
+            if hasattr(product, 'images') and product.images:
+                try:
+                    image_url = product.images.url  # Get the URL
+                except:
+                    # If there's an error getting the URL, use None
+                    pass
+            
+            product_data = {
+                "id": product.id,
+                "name": product.name,
+                "brand": product.brand,
+                "sex": product.sex,
+                "colors": product.colors,
+                "sizes": product.sizes,
+                "price": product.price,
+                "description": product.description,
+                "category": product.category,
+                "sale_type": product.sale_type,
+                "images": image_url  # Use the URL string instead of the ImageField object
+            }
+            products_data.append(product_data)
+        
+        return JsonResponse({
+            "products": products_data
+        }, status=200)
+        
+    except Exception as e:
+        print(traceback.format_exc())  # Print the full traceback for debugging
+        return JsonResponse({"error": str(e)}, status=500)
+    
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_my_products(request):
+    """
+    Get all products owned by the authenticated user.
+    """
+    try:
+        # Get the authenticated user directly
+        user = request.user
+        
+        # Get all products owned by the user
+        products = Product.objects.filter(owner=user)
+        
+        # Convert products to a list of dictionaries
+        products_data = []
+        for product in products:
+            # Convert ImageField to string URL
+            image_url = None
+            if hasattr(product, 'images') and product.images:
+                try:
+                    image_url = product.images.url  # Get the URL
+                except:
+                    # If there's an error getting the URL, use None
+                    pass
+            
+            product_data = {
+                "id": product.id,
+                "name": product.name,
+                "brand": product.brand,
+                "sex": product.sex,
+                "colors": product.colors,
+                "sizes": product.sizes,
+                "price": product.price,
+                "description": product.description,
+                "category": product.category,
+                "sale_type": product.sale_type,
+                "images": image_url  # Use the URL string instead of the ImageField object
+            }
+            products_data.append(product_data)
+        
+        return JsonResponse({
+            "products": products_data
+        }, status=200)
+        
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())  # Print the full traceback for debugging
+        return JsonResponse({"error": str(e)}, status=500)    
