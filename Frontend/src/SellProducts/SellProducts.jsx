@@ -1,5 +1,5 @@
 import './SellProducts.css';
-import { useState, useEffect } from "react";  // Add useEffect here
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function SellProducts() {
@@ -14,7 +14,9 @@ export default function SellProducts() {
         category: "",
         price: "",
         saleType: "SellNow",
-        images: []
+        images: [],
+        stock_quantity: 1, // New field
+        is_available: true // New field
     });
 
     const [errors, setErrors] = useState({
@@ -23,20 +25,20 @@ export default function SellProducts() {
     });
 
     const [successMessage, setSuccessMessage] = useState("");
-    
-    // Check if user is logged in
+
     useEffect(() => {
         const token = localStorage.getItem("token");
         if (!token) {
             navigate("/login", { state: { message: "Please login to list products" } });
         }
     }, [navigate]);
-    
+
     const categories = ["Gym equipement", "Cardio & Endurance", "Supplements", "Accessoires"];
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
-        setProduct({ ...product, [name]: value });
+        const { name, value, type, checked } = e.target;
+        const fieldValue = type === "checkbox" ? checked : value;
+        setProduct({ ...product, [name]: fieldValue });
 
         if (name === "category" && value) {
             setErrors({ ...errors, category: "" });
@@ -84,6 +86,8 @@ export default function SellProducts() {
         formData.append("category", product.category);
         formData.append("sale_type", product.saleType);
         formData.append("price", product.price);
+        formData.append("stock_quantity", product.stock_quantity); // New field
+        formData.append("is_available", product.is_available); // New field
         formData.append("image", product.images[0]);
 
         try {
@@ -91,7 +95,7 @@ export default function SellProducts() {
             const response = await fetch("http://127.0.0.1:8000/api/products/", {
                 method: "POST",
                 headers: {
-                    "Authorization": `Token ${token}` // Add this line
+                    "Authorization": `Token ${token}`
                 },
                 body: formData
             });
@@ -113,7 +117,9 @@ export default function SellProducts() {
                 category: "",
                 price: "",
                 saleType: "SellNow",
-                images: []
+                images: [],
+                stock_quantity: 1,
+                is_available: true
             });
         } catch (error) {
             console.error("Error uploading product:", error);
@@ -164,6 +170,12 @@ export default function SellProducts() {
 
                 <label>Price (Da)</label>
                 <input type="number" name="price" value={product.price} onChange={handleChange} required />
+
+                <label>Stock Quantity</label>
+                <input type="number" name="stock_quantity" value={product.stock_quantity} onChange={handleChange} required />
+
+                <label>Is Available</label>
+                <input type="checkbox" name="is_available" checked={product.is_available} onChange={handleChange} />
 
                 <label>Colors (comma separated)</label>
                 <input type="text" placeholder="e.g. red,blue" onChange={(e) => setProduct({ ...product, colors: e.target.value.split(',') })} />

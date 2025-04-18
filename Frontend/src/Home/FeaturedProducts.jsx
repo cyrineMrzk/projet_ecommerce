@@ -1,14 +1,25 @@
+import React, { useEffect, useState } from 'react';
 import ProductCard from '../ProductCard/ProductCard';
 import './FeaturedProducts.css';
 
-const featuredProducts = [
-    { id: 1, name: "Dumbbell Set",type:'gym equipement',rating:4, price: "4500 DA", image: "dumbell.jpg" },
-    { id: 2, name: "Bench Press",type:'gym equipement',rating:3.5, price: "12000 DA", image: "benchpress.jpg" },
-    { id: 3, name: "Treadmill",type:'gym equipement',rating:3.5, price: "35000 DA", image: "treadmill.jpg" },
-    { id: 4, name: "Kettlebell 16kg",type:'gym equipement',rating:3.5, price: "7000 DA", image: "kettlebell.jpg" },
-  ]
 export default function FeaturedProducts() {
-return(
+  const [featuredProducts, setFeaturedProducts] = useState([]);
+
+  useEffect(() => {
+    fetch('http://127.0.0.1:8000/api/best-sellers/')
+      .then(response => response.json())
+      .then(data => {
+        console.log(data);  // Log to verify the data structure
+        setFeaturedProducts(data);
+      })
+      .catch(error => console.error('Error fetching best sellers:', error));
+  }, []);
+
+  if (featuredProducts.length === 0) {
+    return <p>No products found</p>;
+  }
+
+  return (
     <section className="featured-products">
       <h2 className='title'>Best Sellers</h2>
       <div className="products-container">
@@ -16,9 +27,7 @@ return(
           <ProductCard key={product.id} product={product} imgsrc={product.image} />
         ))}
       </div>
-      <button className="see-all-button" >
-                See All Products
-            </button>
+      <button className="see-all-button">See All Products</button>
     </section>
   );
 }
