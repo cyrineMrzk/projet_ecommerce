@@ -5,16 +5,13 @@ import './ProductCard.css';
 import { Link } from "react-router-dom";
 
 export default function ProductCard({ product, imgsrc }) {
-    const handleAddToCart = async () => {
-        const token = localStorage.getItem('token');
-        console.log('JWT token:', token);
+    const token = localStorage.getItem('token');
 
+    const handleAddToCart = async () => {
         if (!token) {
             alert('Please log in to add to cart.');
             return;
         }
-
-        console.log('Sending request with product:', product);
 
         try {
             const res = await fetch('http://127.0.0.1:8000/api/cart/add/', {
@@ -31,18 +28,45 @@ export default function ProductCard({ product, imgsrc }) {
                 })
             });
 
-            console.log('Response status:', res.status);
             const data = await res.json();
-            console.log('Response data:', data);
-
             if (res.ok) {
                 alert('Product added to cart successfully!');
             } else {
                 alert(data.error || 'Failed to add product to cart.');
             }
         } catch (error) {
-            console.error('Error details:', error);
+            console.error('Error adding to cart:', error);
             alert('An error occurred while adding to cart.');
+        }
+    };
+
+    const handleAddToFavorites = async () => {
+        if (!token) {
+            alert('Please log in to favorite products.');
+            return;
+        }
+
+        try {
+            const res = await fetch('http://127.0.0.1:8000/api/favorites/add/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Token ${token}`
+                },
+                body: JSON.stringify({
+                    product_id: product.id
+                })
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                alert(data.message || 'Product added to favorites!');
+            } else {
+                alert(data.error || 'Failed to add to favorites.');
+            }
+        } catch (error) {
+            console.error('Error adding to favorites:', error);
+            alert('An error occurred while adding to favorites.');
         }
     };
 
@@ -73,7 +97,7 @@ export default function ProductCard({ product, imgsrc }) {
                 <button className="cart-btn" onClick={handleAddToCart}>
                     <FontAwesomeIcon icon={faCartShopping} /> Add to Cart
                 </button>
-                <button className="fav-btn">
+                <button className="fav-btn" onClick={handleAddToFavorites}>
                     <FontAwesomeIcon icon={faHeart} /> Favorite
                 </button>
             </div>

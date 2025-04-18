@@ -209,8 +209,8 @@ def create_product(request):
 
 def best_sellers(request):
     # Fetch the best-selling products (this method should be implemented in your Product model)
-    best_selling_products = Product.get_best_sellers()
-
+    best_selling_products = Product.get_best_sellers().filter(sale_type="SellNow")
+     # Fetch the best-selling products (this method should be implemented in your Product m
     # Limit the results to 10 products (take the first 4)
     best_selling_products = best_selling_products[:4]
 
