@@ -21,7 +21,7 @@ export default function ProductCard({ product, imgsrc }) {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+                    'Authorization': `Token ${token}`
                 },
                 body: JSON.stringify({
                     product_id: product.id,
