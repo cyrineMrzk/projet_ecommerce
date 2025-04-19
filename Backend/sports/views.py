@@ -182,6 +182,7 @@ def best_sellers(request):
         products_data.append(product_data)
 
     return JsonResponse({'products': products_data}, status=200)
+
 @csrf_exempt
 @api_view(['GET'])
 def fetch_products_by_filtering(request):
@@ -197,7 +198,7 @@ def fetch_products_by_filtering(request):
         # Get filter parameters
         category = request.GET.get('category')
         brand = request.GET.get('brand')
-        gender = request.GET.get('gender')
+        gender = request.GET.get('gender')  # This is the parameter from frontend
         color = request.GET.get('color')
         size = request.GET.get('size')
         min_price = request.GET.get('min_price', 0)
@@ -220,6 +221,7 @@ def fetch_products_by_filtering(request):
         if brand and brand != 'all':
             products = products.filter(brand__iexact=brand)
         
+        # Fix gender filtering - use the 'gender' parameter to filter on 'sex' field
         if gender and gender != 'all':
             products = products.filter(sex__iexact=gender)
         
@@ -279,7 +281,7 @@ def fetch_products_by_filtering(request):
                     colors = []
             else:
                 colors = []
-                
+            
             # Same handling for sizes
             if hasattr(product, 'sizes'):
                 if isinstance(product.sizes, list):
@@ -303,7 +305,7 @@ def fetch_products_by_filtering(request):
                 'price': float(product.price),
                 'description': product.description,
                 'brand': product.brand,
-                'gender': product.sex,
+                'gender': product.sex,  # Return as 'gender' for consistency
                 'images': image_urls,
                 'colors': colors,
                 'sizes': sizes
@@ -317,6 +319,7 @@ def fetch_products_by_filtering(request):
         import traceback
         print(traceback.format_exc())
         return JsonResponse({'error': str(e)}, status=500)
+
 @api_view(['GET'])
 def debug(request):
     try:

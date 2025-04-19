@@ -59,7 +59,15 @@ export default function Products() {
                 if (brand !== 'all') params.append('brand', brand);
                 if (gender !== 'all') params.append('gender', gender);
                 
-                console.log("Fetching with category:", selectedCategory);
+                // Add price range parameters
+                params.append('min_price', priceRange[0]);
+                params.append('max_price', priceRange[1]);
+                
+                // Add color and size if they're being filtered
+                if (color !== 'all') params.append('color', color);
+                if (size !== 'all') params.append('size', size);
+                
+                console.log("Fetching with params:", params.toString());
                 const response = await fetch(`http://127.0.0.1:8000/api/fetch?${params.toString()}`);
                 
                 if (!response.ok) {
@@ -98,30 +106,10 @@ export default function Products() {
         };
         
         fetchProducts();
-    }, [selectedCategory, brand, gender]);  // Add dependencies for filters that trigger API calls
-
-    // Apply client-side filtering
-    const filteredProducts = products.filter(product => {
-        // Brand filter
-        if (brand !== "all" && product.brand !== brand) return false;
-        
-        // Gender filter
-        if (gender !== "all" && product.gender !== gender) return false;
-        
-        // Color filter
-        if (color !== "all" && (!product.colors || !product.colors.includes(color))) return false;
-        
-        // Size filter
-        if (size !== "all" && (!product.sizes || !product.sizes.includes(size))) return false;
-        
-        // Price range filter
-        if (product.price < priceRange[0] || product.price > priceRange[1]) return false;
-        
-        return true;
-    });
+    }, [selectedCategory, brand, gender, color, size, priceRange]);  // Add all filter dependencies
 
     // Sort products
-    const sortedProducts = [...filteredProducts].sort((a, b) => {
+    const sortedProducts = [...products].sort((a, b) => {
         if (sortBy === "latest") {
             // Sort by date if available, otherwise by id (newer products have higher ids)
             return a.date_added && b.date_added 
@@ -148,6 +136,11 @@ export default function Products() {
             .split('-')
             .map(word => word.charAt(0).toUpperCase() + word.slice(1))
             .join(' ');
+    };
+
+    // Handle price range change with debounce
+    const handlePriceRangeChange = (newRange) => {
+        setPriceRange(newRange);
     };
 
     return (
@@ -207,18 +200,24 @@ export default function Products() {
                             min="0"
                             max="15000"
                             value={priceRange[0]}
-                            onChange={(e) => setPriceRange([parseInt(e.target.value), priceRange[1]])}
+                            onChange={(e) => handlePriceRangeChange([parseInt(e.target.value), priceRange[1]])}
                         />
                         <input 
                             type="range"
                             min="0"
                             max="15000"
                             value={priceRange[1]}
-                            onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
+                            onChange={(e) => handlePriceRangeChange([priceRange[0], parseInt(e.target.value)])}
                         />
                     </div>
                     <span className="price-range-display">{priceRange[0]} Da - {priceRange[1]} Da</span>
                 </div>
+                <button 
+        className="return-btn" 
+        onClick={() => setIsFilterOpen(false)}
+    >
+        Return
+    </button>
             </div>
             
             <div className="sort">
