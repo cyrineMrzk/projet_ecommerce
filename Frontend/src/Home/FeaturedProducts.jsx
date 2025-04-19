@@ -9,8 +9,8 @@ export default function FeaturedProducts() {
     fetch('http://127.0.0.1:8000/api/best-sellers/')
       .then(response => response.json())
       .then(data => {
-        console.log(data);  // Log to verify the data structure
-        setFeaturedProducts(data);
+        console.log("Best sellers:", data);
+        setFeaturedProducts(data.products || []);  // ✅ Fix: access data.products
       })
       .catch(error => console.error('Error fetching best sellers:', error));
   }, []);
@@ -24,7 +24,7 @@ export default function FeaturedProducts() {
       <h2 className='title'>Best Sellers</h2>
       <div className="products-container">
         {featuredProducts.map((product) => (
-          <ProductCard key={product.id} product={product} imgsrc={product.image} />
+          <ProductCard key={product.id} product={product} />
         ))}
       </div>
       <button className="see-all-button">See All Products</button>

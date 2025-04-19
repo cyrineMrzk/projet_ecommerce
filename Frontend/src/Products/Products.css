@@ -3,15 +3,14 @@
     margin: 40px auto;
     padding: 20px;
     text-align: center;
-    
+    /* Remove any potential border/outline */
+    border: none;
+    outline: none;
 }
 
-.products-page h1 {
-    font-size: 24px;
-    margin-bottom: 20px;
-    color: #333;
+.products-page * {
+    outline: none;
 }
-
 /* Filter Toggle Button */
 .products-page .filter-toggle-btn {
     align-self: flex-end;
@@ -36,13 +35,14 @@ background-color: rgba(230, 225, 225, 0.495);
     left: -300px;
     top: 0;
     width: 250px;
-    height: 100%;
+    height: 100vh; /* Use viewport height */
     background-color: #f8f9fa;
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
     padding: 20px;
     transition: left 0.3s ease-in-out;
+    z-index: 1000; /* Ensure it's above other elements */
+    overflow-y: auto; /* Allow scrolling if needed */
 }
-
 
 .products-page .filter-panel.open {
     left: 0;

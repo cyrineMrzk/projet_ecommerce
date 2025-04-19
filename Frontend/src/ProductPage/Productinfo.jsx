@@ -85,18 +85,10 @@ export default function ProductInfo({ product }) {
     // Function to get image URL (handles both full URLs and relative paths)
     const getImageUrl = (imagePath) => {
         if (!imagePath) return dumbell;
-        
-        if (imagePath.startsWith('http')) {
-            return imagePath;
-        }
-        
-        try {
-            return require(`../images/${imagePath}`);
-        } catch (error) {
-            console.error(`Failed to load image: ${imagePath}`, error);
-            return dumbell;
-        }
+        if (imagePath.startsWith('http')) return imagePath;
+        return dumbell;
     };
+    
     
     return (
         <div className="productinfo">

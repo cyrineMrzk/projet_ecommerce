@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import './SellerDashboard.css';
-import placeholderImage from '../images/dumbell.jpg';
-
 export default function SellerDashboard() {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);

@@ -109,7 +109,7 @@ def create_product(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def debug(request):
+def debug_(request):
     try:
         from django.contrib.auth.models import User
         from django.core.files.base import ContentFile
@@ -152,38 +152,254 @@ def debug(request):
         import traceback
         print(traceback.format_exc())
         return JsonResponse({"error": str(e)}, status=500)
-
+@csrf_exempt
+@api_view(['GET'])
 def best_sellers(request):
-    best_selling_products = Product.get_best_sellers().filter(sale_type="SellNow")
-    best_selling_products = best_selling_products[:4]
-    
+    best_selling_products = Product.get_best_sellers().filter(sale_type="SellNow")[:4]
+
     if not best_selling_products:
         return JsonResponse({"message": "No best sellers found."}, status=404)
-    
+
     products_data = []
+
     for product in best_selling_products:
+        product_images = product.images.all()
+        image_urls = [
+            request.build_absolute_uri(image.image.url) for image in product_images
+        ] if product_images else []
+
         product_data = {
             'id': product.id,
             'name': product.name,
             'category': product.category,
-            'price': str(product.price),
+            'price': float(product.price),
             'description': product.description,
             'brand': product.brand,
             'sex': product.sex,
+            'images': image_urls  # ✅ Match same as get_my_products
         }
-        
-        # Handle images properly
-        try:
-            if product.images:
-                image_paths = json.loads(product.images)
-                if image_paths and len(image_paths) > 0:
-                    product_data['image'] = image_paths[0]  # Use the first image
-        except (json.JSONDecodeError, TypeError):
-            pass
-            
+
         products_data.append(product_data)
+
+    return JsonResponse({'products': products_data}, status=200)
+@csrf_exempt
+@api_view(['GET'])
+def fetch_products_by_filtering(request):
+    try:
+        # Debug logging to help identify available data
+        all_categories = list(Product.objects.values_list('category', flat=True).distinct())
+        print(f"Available categories in database: {all_categories}")
+        print(f"Total products in database: {Product.objects.count()}")
+        
+        # Base queryset
+        products = Product.objects.all()
+        
+        # Get filter parameters
+        category = request.GET.get('category')
+        brand = request.GET.get('brand')
+        gender = request.GET.get('gender')
+        color = request.GET.get('color')
+        size = request.GET.get('size')
+        min_price = request.GET.get('min_price', 0)
+        max_price = request.GET.get('max_price', 15000)
+        
+        # Apply category filter with flexibility
+        if category:
+            from django.db.models import Q
+            # Format the category both ways for flexibility
+            formatted_category = category.replace('-', ' ')
+            print(f"Searching for category: '{category}' or '{formatted_category}'")
+            
+            # Use Q objects for more flexible querying with OR condition
+            products = products.filter(
+                Q(category__icontains=formatted_category) | 
+                Q(category__icontains=category)
+            )
+        
+        # Apply other filters
+        if brand and brand != 'all':
+            products = products.filter(brand__iexact=brand)
+        
+        if gender and gender != 'all':
+            products = products.filter(sex__iexact=gender)
+        
+        if color and color != 'all':
+            # Handle array field more carefully
+            try:
+                products = products.filter(colors__contains=[color])
+            except:
+                # Fallback to string contains if JSON filtering fails
+                products = products.filter(colors__icontains=color)
+        
+        if size and size != 'all':
+            # Handle different data types for sizes
+            try:
+                # If size is a number, convert it
+                size_value = int(size) if size.isdigit() else size
+                products = products.filter(sizes__contains=[size_value])
+            except:
+                # Fallback to string contains
+                products = products.filter(sizes__icontains=size)
+        
+        # Apply price range filter
+        try:
+            min_price_value = float(min_price)
+            max_price_value = float(max_price)
+            products = products.filter(price__gte=min_price_value, price__lte=max_price_value)
+        except ValueError:
+            # Handle invalid price values
+            pass
+        
+        # Log filtered results count
+        print(f"Found {products.count()} products after filtering")
+        
+        # Prepare response data
+        products_data = []
+        for product in products:
+            # Get product images
+            product_images = product.images.all()
+            image_urls = [
+                request.build_absolute_uri(image.image.url) for image in product_images
+            ] if product_images else []
+            
+            # Process colors and sizes
+            # Handle both list and string formats
+            if hasattr(product, 'colors'):
+                if isinstance(product.colors, list):
+                    colors = product.colors
+                elif product.colors and isinstance(product.colors, str):
+                    try:
+                        # Try to parse as JSON
+                        import json
+                        colors = json.loads(product.colors)
+                    except json.JSONDecodeError:
+                        # Fallback to comma-separated string
+                        colors = [c.strip() for c in product.colors.split(',') if c.strip()]
+                else:
+                    colors = []
+            else:
+                colors = []
+                
+            # Same handling for sizes
+            if hasattr(product, 'sizes'):
+                if isinstance(product.sizes, list):
+                    sizes = product.sizes
+                elif product.sizes and isinstance(product.sizes, str):
+                    try:
+                        import json
+                        sizes = json.loads(product.sizes)
+                    except json.JSONDecodeError:
+                        sizes = [s.strip() for s in product.sizes.split(',') if s.strip()]
+                else:
+                    sizes = []
+            else:
+                sizes = []
+            
+            # Build product data dictionary
+            product_data = {
+                'id': product.id,
+                'name': product.name,
+                'category': product.category,
+                'price': float(product.price),
+                'description': product.description,
+                'brand': product.brand,
+                'gender': product.sex,
+                'images': image_urls,
+                'colors': colors,
+                'sizes': sizes
+            }
+            products_data.append(product_data)
+        
+        return JsonResponse({'products': products_data}, status=200)
     
-    return JsonResponse(products_data, safe=False)
+    except Exception as e:
+        # Log the full error for debugging
+        import traceback
+        print(traceback.format_exc())
+        return JsonResponse({'error': str(e)}, status=500)
+@api_view(['GET'])
+def debug(request):
+    try:
+        from django.db.models import Q
+
+        # Capture all raw input
+        query_params = dict(request.GET)
+
+        debug_output = {
+            "query_params": query_params,
+            "matched_product_ids": [],
+            "filtered_fields": {},
+            "product_snapshots": []
+        }
+
+        queryset = Product.objects.all()
+
+        category = request.GET.get('category')
+        brand = request.GET.get('brand')
+        gender = request.GET.get('gender')
+        color = request.GET.get('color')
+        size = request.GET.get('size')
+        min_price = request.GET.get('min_price', 0)
+        max_price = request.GET.get('max_price', 15000)
+
+        if category:
+            formatted_category = category.replace('-', ' ')
+            debug_output['filtered_fields']['category'] = [category, formatted_category]
+            queryset = queryset.filter(Q(category__icontains=category) | Q(category__icontains=formatted_category))
+
+        if brand and brand != 'all':
+            debug_output['filtered_fields']['brand'] = brand
+            queryset = queryset.filter(brand__iexact=brand)
+
+        if gender and gender != 'all':
+            debug_output['filtered_fields']['gender'] = gender
+            queryset = queryset.filter(sex__iexact=gender)
+
+        if color and color != 'all':
+            debug_output['filtered_fields']['color'] = color
+            try:
+                queryset = queryset.filter(colors__contains=[color])
+            except:
+                queryset = queryset.filter(colors__icontains=color)
+
+        if size and size != 'all':
+            debug_output['filtered_fields']['size'] = size
+            try:
+                size_val = int(size) if size.isdigit() else size
+                queryset = queryset.filter(sizes__contains=[size_val])
+            except:
+                queryset = queryset.filter(sizes__icontains=size)
+
+        try:
+            min_price_val = float(min_price)
+            max_price_val = float(max_price)
+            debug_output['filtered_fields']['price_range'] = [min_price_val, max_price_val]
+            queryset = queryset.filter(price__gte=min_price_val, price__lte=max_price_val)
+        except ValueError as ve:
+            debug_output['filtered_fields']['price_range'] = str(ve)
+
+        debug_output['matched_product_ids'] = list(queryset.values_list('id', flat=True))
+
+        for product in queryset[:10]:
+            debug_output['product_snapshots'].append({
+                'id': product.id,
+                'name': product.name,
+                'brand': product.brand,
+                'category': product.category,
+                'gender(sex)': product.sex,
+                'price': float(product.price),
+                'colors': product.colors,
+                'sizes': product.sizes
+            })
+
+        return JsonResponse(debug_output, status=200)
+
+    except Exception as e:
+        import traceback
+        return JsonResponse({
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        }, status=500)
 
 @api_view(['GET'])
 def product_debug(request, product_id):
