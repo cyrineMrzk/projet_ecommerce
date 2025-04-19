@@ -27,6 +27,9 @@ export default function ProductInfo({ product }) {
             // Set available sizes from product
             if (product.sizes) {
                 setAvailableSizes(product.sizes);
+                if (product.sizes.length > 0) {
+                    setSelectedSize(product.sizes[0]);
+                }
             }
             
             // Set main image and thumbnails
@@ -88,7 +91,82 @@ export default function ProductInfo({ product }) {
         if (imagePath.startsWith('http')) return imagePath;
         return dumbell;
     };
-    
+
+    // Add to cart functionality
+    const handleAddToCart = async () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert('Please log in to add to cart.');
+            return;
+        }
+
+        if (!selectedSize && availableSizes.length > 0) {
+            alert('Please select a size.');
+            return;
+        }
+
+        try {
+            const res = await fetch('http://127.0.0.1:8000/api/cart/add/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Token ${token}`
+                },
+                body: JSON.stringify({
+                    product_id: product.id,
+                    quantity: quantity,
+                    color: selectedColor || product.colors?.[0] || 'Black',
+                    size: selectedSize || product.sizes?.[0] || 'M'
+                })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                alert('Product added to cart successfully!');
+            } else {
+                alert(data.error || 'Failed to add product to cart.');
+            }
+        } catch (error) {
+            console.error('Error adding to cart:', error);
+            alert('An error occurred while adding to cart.');
+        }
+    };
+
+    // Add to favorites functionality
+    const handleAddToFavorites = async () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert('Please log in to favorite products.');
+            return;
+        }
+        try {
+            const res = await fetch('http://127.0.0.1:8000/api/favorites/add/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Token ${token}`
+                },
+                body: JSON.stringify({
+                    product_id: product.id
+                })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                alert(data.message || 'Product added to favorites!');
+            } else {
+                alert(data.error || 'Failed to add to favorites.');
+            }
+        } catch (error) {
+            console.error('Error adding to favorites:', error);
+            alert('An error occurred while adding to favorites.');
+        }
+    };
+
+    // Buy now functionality
+    const handleBuyNow = () => {
+        handleAddToCart();
+        // Navigate to checkout page
+        window.location.href = '/checkout';
+    };
     
     return (
         <div className="productinfo">
@@ -153,13 +231,13 @@ export default function ProductInfo({ product }) {
                     
                     <div className='cartactions'>
                         <div className='firstaction'>
-                            <button>Add to cart</button>
-                            <button className='heart-button'>
+                            <button onClick={handleAddToCart}>Add to cart</button>
+                            <button className='heart-button' onClick={handleAddToFavorites}>
                                 <FontAwesomeIcon icon={faHeart} size="2xl" style={{color:"black"}} />
                             </button>
                         </div>
                         <span>Or</span>
-                        <button>Buy now</button>
+                        <button onClick={handleBuyNow}>Buy now</button>
                     </div>
                     
                     <div className='moreinfo'>
@@ -179,8 +257,8 @@ export default function ProductInfo({ product }) {
                         </span>
                         {showDetails && (
                             <p className='info-content'>
-                                {product.details || 
-                                 `Brand: ${product.brand || 'N/A'}\n
+                                {product.details ||
+                                  `Brand: ${product.brand || 'N/A'}\n
                                   Category: ${product.category || 'N/A'}\n
                                   Material: ${product.material || 'N/A'}`}
                             </p>
@@ -191,4 +269,3 @@ export default function ProductInfo({ product }) {
         </div>
     );
 }
-
