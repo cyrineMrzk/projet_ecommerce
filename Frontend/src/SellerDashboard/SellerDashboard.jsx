@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import './SellerDashboard.css'
+import './SellerDashboard.css';
+import placeholderImage from '../images/dumbell.jpg';
 
 export default function SellerDashboard() {
     const [products, setProducts] = useState([]);
@@ -11,7 +12,7 @@ export default function SellerDashboard() {
         const fetchProducts = async () => {
             try {
                 const token = localStorage.getItem("token");
-                
+
                 if (!token) {
                     setError("You need to be logged in to view your products");
                     setLoading(false);
@@ -30,6 +31,7 @@ export default function SellerDashboard() {
                 }
 
                 const data = await response.json();
+                console.log("Fetched products:", data.products); // 👈 Debug output
                 setProducts(data.products || []);
                 setLoading(false);
             } catch (err) {
@@ -45,10 +47,8 @@ export default function SellerDashboard() {
     return (
         <div className="seller-dashboard">
             <h1>Your Listed Products</h1>
-            <button className="add-product-btn">
-                <Link to="/sellproducts">+ Add New Product</Link>
-            </button>
-            
+            <Link to="/sellproducts" className="add-product-btn">+ Add New Product</Link>
+
             {loading ? (
                 <p>Loading your products...</p>
             ) : error ? (
@@ -57,20 +57,32 @@ export default function SellerDashboard() {
                 <p className="no-products">You haven't listed any products yet.</p>
             ) : (
                 <div className="product-list">
-                    {products.map((product) => (
-                        <div key={product.id} className="product-card">
-                            <img 
-                                src={product.images || "/placeholder-image.jpg"} 
-                                alt={product.name} 
-                                className="product-img" 
-                            />
-                            <div className="product-info">
-                                <h3>{product.name}</h3>
-                                <p>{product.price} Da</p>
-                                <span className="active">Active</span>
+                    {products.map((product) => {
+                        const imageUrl = product.images && product.images.length > 0
+                            ? product.images[0]
+                            : "/placeholder-image.jpg";
+
+                        console.log(`Product ${product.name} image:`, imageUrl); // 👈 Debug image URL
+
+                        return (
+                            <div key={product.id} className="product-card">
+                                <img
+                                    src={imageUrl}
+                                    alt={product.name}
+                                    className="product-img"
+                                    onError={(e) => {
+                                        e.target.onerror = null;
+                                        e.target.src = "/placeholder-image.jpg"; // 👈 Fallback if image fails
+                                    }}
+                                />
+                                <div className="product-info">
+                                    <h3>{product.name}</h3>
+                                    <p>{product.price} Da</p>
+                                    <span className="active">Active</span>
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
         </div>

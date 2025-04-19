@@ -70,216 +70,205 @@ def login_view(request):
         }, status=status.HTTP_200_OK)
 
     return Response({"error": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST)
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def create_product(request):
-    if request.FILES.get("image") and request.POST.get("name"):
-        image = request.FILES["image"]
-        image_path = default_storage.save(f"product_images/{image.name}", image)  # Saves the image
-
-        # Extract other data
+    images = request.FILES.getlist("images")  # Get all uploaded files named "images"
+    
+    if images and request.POST.get("name"):
         data = request.POST
-        user = request.user  # Get the authenticated user
-
+        user = request.user
+        
+        # Create the product first
         product = Product.objects.create(
             name=data.get("name"),
             owner=user,
             brand=data.get("brand", ""),
             sex=data.get("sex", "unisex"),
-            colors=json.loads(data.get("colors", "[]")),  # Expecting JSON string
+            colors=json.loads(data.get("colors", "[]")),
             sizes=json.loads(data.get("sizes", "[]")),
             price=float(data.get("price", 0)),
             description=data.get("description", ""),
             category=data.get("category", "Accessories"),
             sale_type=data.get("sale_type", "SellNow"),
-            images=image_path,
-            stock_quantity=int(data.get("stock_quantity", 1)),  # Default to 1 if not provided
-            is_available=data.get("is_available", "true").lower() == "true"  # Convert string to boolean
+            stock_quantity=int(data.get("stock_quantity", 1)),
+            is_available=data.get("is_available", "true").lower() == "true"
         )
-
-        product.save()
-
-        return JsonResponse({"message": "Product created successfully", "product_id": product.id}, status=201)
-
-    return JsonResponse({"error": "Invalid data"}, status=400)
-
-
-# @api_view(['GET'])
-# @permission_classes([IsAuthenticated])
-# def debug(request):
-#     try:
-#         # Get the specified user by email
-#         from django.contrib.auth.models import User  # Or your custom user model
-#         try:
-#             user = User.objects.get(email="mohamedben@gmail.com")
-#         except User.DoesNotExist:
-#             return JsonResponse({"error": "User with email mohamedben@gmail.com not found"}, status=404)
         
-#         # List of products to add
-#         products_data = [
-#             {
-#                 "name": "Dumbbell Set",
-#                 "category": "Gym Equipment",
-#                 "price": 4500.00,
-#                 "description": "A high-quality dumbbell set for your home gym.",
-#                 "brand": "FitPro",
-#                 "sex": "unisex",
-#                 "sale_type": "SellNow",
-#                 "colors": ["Black", "Silver"],
-#                 "sizes": ["Standard"],
-#                 "stock_quantity": 10,
-#                 "is_available": True,
-#                 "image": "dumbell.jpg"
-#             },
-#             {
-#                 "name": "Bench Press",
-#                 "category": "Gym Equipment",
-#                 "price": 12000.00,
-#                 "description": "Durable bench press for strength training.",
-#                 "brand": "IronMax",
-#                 "sex": "unisex",
-#                 "sale_type": "SellNow",
-#                 "colors": ["Black", "Silver"],
-#                 "sizes": ["Standard"],
-#                 "stock_quantity": 5,
-#                 "is_available": True,
-#                 "image": "benchpress.jpg"
-#             },
-#             {
-#                 "name": "Treadmill",
-#                 "category": "Cardio & Endurance",
-#                 "price": 35000.00,
-#                 "description": "High-performance treadmill for cardio workouts.",
-#                 "brand": "RunTech",
-#                 "sex": "unisex",
-#                 "sale_type": "SellNow",
-#                 "colors": ["Black", "Silver"],
-#                 "sizes": ["Standard"],
-#                 "stock_quantity": 3,
-#                 "is_available": True,
-#                 "image": "treadmill.jpg"
-#             },
-#             {
-#                 "name": "Kettlebell 16kg",
-#                 "category": "Gym Equipment",
-#                 "price": 7000.00,
-#                 "description": "16kg kettlebell for strength and conditioning.",
-#                 "brand": "PowerLift",
-#                 "sex": "unisex",
-#                 "sale_type": "SellNow",
-#                 "colors": ["Black", "Silver"],
-#                 "sizes": ["Standard"],
-#                 "stock_quantity": 15,
-#                 "is_available": True,
-#                 "image": "kettlebell.jpg"
-#             }
-#         ]
-
-#         # Loop through each product and create it
-#         for product_data in products_data:
-#             # Instead of trying to save a file, just store the image filename
-#             image_path = f"product_images/{product_data['image']}"
+        # Now add the images
+        for image in images:
+            ProductImage.objects.create(
+                product=product,
+                image=image  # Django will handle saving the file
+            )
             
-#             # Create product in the database with specified owner
-#             product = Product.objects.create(
-#                 owner=user,  # Set the owner to the specified user
-#                 name=product_data["name"],
-#                 brand=product_data["brand"],
-#                 sex=product_data["sex"],
-#                 colors=product_data["colors"],
-#                 sizes=product_data["sizes"],
-#                 price=product_data["price"],
-#                 description=product_data["description"],
-#                 category=product_data["category"],
-#                 sale_type=product_data["sale_type"],
-#                 images=image_path,  # Just store the path, don't try to save an actual file
-#                 stock_quantity=product_data["stock_quantity"],
-#                 is_available=product_data["is_available"]
-#             )
-
-#             product.save()  # Save the product to the database
-
-#         return JsonResponse({"message": "Products added successfully!"}, status=201)
-
-#     except Exception as e:
-#         import traceback
-#         print(traceback.format_exc())  # For debugging
-#         return JsonResponse({"error": str(e)}, status=500)
+        return JsonResponse({"message": "Product created successfully", "product_id": product.id}, status=201)
     
-
-def best_sellers(request):
-    # Fetch the best-selling products (this method should be implemented in your Product model)
-    best_selling_products = Product.get_best_sellers().filter(sale_type="SellNow")
-     # Fetch the best-selling products (this method should be implemented in your Product m
-    # Limit the results to 10 products (take the first 4)
-    best_selling_products = best_selling_products[:4]
-
-    if not best_selling_products:
-        return JsonResponse({"message": "No best sellers found."}, status=404)
-
-    # Map the products to a list of dictionaries to send as JSON
-    products_data = [
-        {
-            'id': product.id,
-            'name': product.name,
-            'category': product.category,
-            'price': str(product.price),  # Convert price to string to send in JSON
-            'description': product.description,
-            'brand': product.brand,
-            'sex': product.sex,
-            'image': getattr(product.images, 'url', None),  # Clean way to get the URL or None
-        }
-        for product in best_selling_products
-    ]
-    
-    return JsonResponse(products_data, safe=False)
-
+    return JsonResponse({"error": "Invalid data"}, status=400)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def debug(request):
-    """
-    Debug function to inspect and output data for best sellers.
-    """
     try:
-        # Fetch the best-selling products (this method should be implemented in your Product model)
-        best_selling_products = Product.get_best_sellers()
-
-        # Print the fetched products for debugging
-        print(f"Fetched best-selling products: {best_selling_products}")
-
-        # Limit the results to 10 products (take the first 4)
-        best_selling_products = best_selling_products[:4]
-
-        if not best_selling_products:
-            print("No best sellers found.")
-            return JsonResponse({"message": "No best sellers found."}, status=404)
-
-        # Map the products to a list of dictionaries to send as JSON
-        products_data = [
-            {
-                'id': product.id,
-                'name': product.name,
-                'category': product.category,
-                'price': str(product.price),  # Convert price to string to send in JSON
-                'description': product.description,
-                'brand': product.brand,
-                'sex': product.sex,
-                'image': getattr(product.images, 'url', None),  # Clean way to get the URL or None
-            }
-            for product in best_selling_products
-        ]
-
-        # Print the data that will be sent to the client
-        print(f"Products data to send: {products_data}")
-
-        return JsonResponse(products_data, safe=False)
-
+        from django.contrib.auth.models import User
+        from django.core.files.base import ContentFile
+        import os
+        
+        try:
+            user = User.objects.get(email="mohamedben@gmail.com")
+        except User.DoesNotExist:
+            return JsonResponse({"error": "User with email mohamedben@gmail.com not found"}, status=404)
+        
+        # Create the product
+        product = Product.objects.create(
+            owner=user,
+            name="New Balance 530",
+            brand="New Balance",
+            sex="unisex",
+            colors=["gray", "white"],
+            sizes=[40, 41, 42],
+            price=8999.99,
+            description="Baskets emblématiques New Balance 574, confortables, stylées et parfaites pour un usage quotidien.",
+            category="Shoes",
+            sale_type="SellNow",
+            stock_quantity=12,
+            is_available=True
+        )
+        image_names = ["newbalance1.jpg", "newbalance2.jpg", "newbalance3.jpg"]
+        
+        for name in image_names:
+            # In a real scenario, you'd have actual image files
+            # This is just a placeholder for the debug function
+            # You might want to copy existing files from your static directory
+            ProductImage.objects.create(
+                product=product,
+                image=f"product_images/{name}"  # This is just for demonstration
+            )
+            
+        return JsonResponse({"message": "Produit New Balance ajouté avec succès", "product_id": product.id}, status=201)
+        
     except Exception as e:
-        # If there's an error, print the traceback for debugging
-        print("Error occurred:", str(e))
-        print(traceback.format_exc())  # Print the stack trace for detailed debugging
+        import traceback
+        print(traceback.format_exc())
         return JsonResponse({"error": str(e)}, status=500)
+
+def best_sellers(request):
+    best_selling_products = Product.get_best_sellers().filter(sale_type="SellNow")
+    best_selling_products = best_selling_products[:4]
+    
+    if not best_selling_products:
+        return JsonResponse({"message": "No best sellers found."}, status=404)
+    
+    products_data = []
+    for product in best_selling_products:
+        product_data = {
+            'id': product.id,
+            'name': product.name,
+            'category': product.category,
+            'price': str(product.price),
+            'description': product.description,
+            'brand': product.brand,
+            'sex': product.sex,
+        }
+        
+        # Handle images properly
+        try:
+            if product.images:
+                image_paths = json.loads(product.images)
+                if image_paths and len(image_paths) > 0:
+                    product_data['image'] = image_paths[0]  # Use the first image
+        except (json.JSONDecodeError, TypeError):
+            pass
+            
+        products_data.append(product_data)
+    
+    return JsonResponse(products_data, safe=False)
+
+@api_view(['GET'])
+def product_debug(request, product_id):
+    try:
+        product = Product.objects.get(id=product_id)
+        
+        # Basic product info
+        data = {
+            'id': product.id,
+            'name': product.name,
+            'model_fields': {field.name: type(getattr(product, field.name)).__name__ 
+                            for field in product._meta.fields}
+        }
+        # Check images field
+        if hasattr(product, 'images'):
+            data['images_type'] = type(product.images).__name__
+            data['images_value'] = str(product.images)
+            
+            # If it's a string, try to parse it
+            if isinstance(product.images, str):
+                try:
+                    parsed = json.loads(product.images)
+                    data['images_parsed'] = parsed
+                except json.JSONDecodeError as e:
+                    data['images_parse_error'] = str(e)
+            
+            # If it's a file field
+            if hasattr(product.images, 'url'):
+                data['images_url'] = request.build_absolute_uri(product.images.url)
+        
+        return JsonResponse(data)
+    except Product.DoesNotExist:
+        return JsonResponse({'error': 'Product not found'}, status=404)
+    except Exception as e:
+        import traceback
+        return JsonResponse({
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        }, status=500)
+
+# @api_view(['GET'])
+# @permission_classes([IsAuthenticated])
+# def debug(request):
+#     """
+#     Debug function to inspect and output data for best sellers.
+#     """
+#     try:
+#         # Fetch the best-selling products (this method should be implemented in your Product model)
+#         best_selling_products = Product.get_best_sellers()
+
+#         # Print the fetched products for debugging
+#         print(f"Fetched best-selling products: {best_selling_products}")
+
+#         # Limit the results to 10 products (take the first 4)
+#         best_selling_products = best_selling_products[:4]
+
+#         if not best_selling_products:
+#             print("No best sellers found.")
+#             return JsonResponse({"message": "No best sellers found."}, status=404)
+
+#         # Map the products to a list of dictionaries to send as JSON
+#         products_data = [
+#             {
+#                 'id': product.id,
+#                 'name': product.name,
+#                 'category': product.category,
+#                 'price': str(product.price),  # Convert price to string to send in JSON
+#                 'description': product.description,
+#                 'brand': product.brand,
+#                 'sex': product.sex,
+#                 'image': getattr(product.images, 'url', None),  # Clean way to get the URL or None
+#             }
+#             for product in best_selling_products
+#         ]
+
+#         # Print the data that will be sent to the client
+#         print(f"Products data to send: {products_data}")
+
+#         return JsonResponse(products_data, safe=False)
+
+#     except Exception as e:
+#         # If there's an error, print the traceback for debugging
+#         print("Error occurred:", str(e))
+#         print(traceback.format_exc())  # Print the stack trace for detailed debugging
+#         return JsonResponse({"error": str(e)}, status=500)
     
 
 @api_view(['GET'])
@@ -298,14 +287,9 @@ def get_my_products(request):
         # Convert products to a list of dictionaries
         products_data = []
         for product in products:
-            # Convert ImageField to string URL
-            image_url = None
-            if hasattr(product, 'images') and product.images:
-                try:
-                    image_url = product.images.url  # Get the URL
-                except:
-                    # If there's an error getting the URL, use None
-                    pass
+            # Get all images for this product using the related_name 'images'
+            product_images = product.images.all()
+            image_urls = [request.build_absolute_uri(image.image.url) for image in product_images] if product_images else []
             
             product_data = {
                 "id": product.id,
@@ -314,13 +298,15 @@ def get_my_products(request):
                 "sex": product.sex,
                 "colors": product.colors,
                 "sizes": product.sizes,
-                "price": product.price,
+                "price": float(product.price),  # Convert Decimal to float for JSON serialization
                 "description": product.description,
                 "category": product.category,
                 "sale_type": product.sale_type,
-                "images": image_url,  # Use the URL string instead of the ImageField object
-                "stock_quantity": product.stock_quantity,  # Include stock quantity
-                "is_available": product.is_available  # Include availability status
+                "images": image_urls,  # List of image URLs
+                "stock_quantity": product.stock_quantity,
+                "is_available": product.is_available,
+                "created_at": product.created_at,
+                "sales_count": product.sales_count
             }
             products_data.append(product_data)
         
@@ -331,7 +317,7 @@ def get_my_products(request):
     except Exception as e:
         import traceback
         print(traceback.format_exc())  # Print the full traceback for debugging
-        return JsonResponse({"error": str(e)}, status=500)   
+        return JsonResponse({"error": str(e)}, status=500)
 
 #http://127.0.0.1:8000/api/debug/
 @api_view(['POST'])

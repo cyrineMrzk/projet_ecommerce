@@ -33,7 +33,6 @@ class Product(models.Model):
     description = models.TextField()
     category = models.CharField(max_length=255, choices=CATEGORY_CHOICES)
     sale_type = models.CharField(max_length=10, choices=SALE_TYPES, default='SellNow')
-    images = models.ImageField(upload_to='product_images/')
     stock_quantity = models.PositiveIntegerField(default=1)
     is_available = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -51,7 +50,13 @@ class Product(models.Model):
     def get_best_sellers(cls):
         # Get the top 4 best sellers based on sales count
         return cls.objects.order_by('-sales_count')[:]
-
+# Add the ProductImage model
+class ProductImage(models.Model):
+    product = models.ForeignKey(Product, related_name='images', on_delete=models.CASCADE)
+    image = models.ImageField(upload_to='product_images/')
+    
+    def __str__(self):
+        return f"Image for {self.product.name}"
 class Cart(models.Model):
     user = models.OneToOneField(get_user_model(), on_delete=models.CASCADE, related_name="cart")
     created_at = models.DateTimeField(auto_now_add=True)

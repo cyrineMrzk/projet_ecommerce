@@ -71,18 +71,56 @@ export default function ProductCard({ product, imgsrc }) {
     };
 
     const getImageSource = () => {
-        if (!imgsrc) return dumbell;
-        try {
-            return require(`../images/${imgsrc}`);
-        } catch (error) {
-            console.error(`Failed to load image: ${imgsrc}`, error);
-            return dumbell;
+        // For debugging
+        console.log("Product:", product);
+        
+        // Check if product has images stored as JSON string
+        if (product.images) {
+            try {
+                // Try to parse if it's a JSON string
+                const imageArray = typeof product.images === 'string' 
+                    ? JSON.parse(product.images) 
+                    : product.images;
+                    
+                if (Array.isArray(imageArray) && imageArray.length > 0) {
+                    // If the path is already a full URL, use it directly
+                    if (imageArray[0].startsWith('http')) {
+                        return imageArray[0];
+                    }
+                    
+                    // Otherwise, construct the URL to your Django media files
+                    return `http://127.0.0.1:8000/media/${imageArray[0]}`;
+                }
+            } catch (error) {
+                console.error("Error parsing product images:", error);
+            }
         }
+        
+        // Check for single image property
+        if (product.image) {
+            if (product.image.startsWith('http')) {
+                return product.image;
+            }
+            return `http://127.0.0.1:8000/media/${product.image}`;
+        }
+        
+        // Then try the imgsrc prop
+        if (imgsrc) {
+            try {
+                return require(`../images/${imgsrc}`);
+            } catch (error) {
+                console.error(`Failed to load imgsrc: ${imgsrc}`, error);
+            }
+        }
+        
+        // Fallback to default image
+        return dumbell;
     };
+    
 
     return (
         <div className="product-card">
-            <Link to={`/products/${product.id}`} className="link">
+            <Link to={`/products/${product.id}`} state={{ product: product }} className="link">
                 <img src={getImageSource()} alt={product.name} />
                 <div className="product-info">
                     <h2>{product.name}</h2>

@@ -1,7 +1,7 @@
 import { faHeart } from '@fortawesome/free-regular-svg-icons';
 import mainImage from '../images/newbalance1.jpg';
-import thumbnail1 from '../images/newbalance2.webp';
-import thumbnail2 from '../images/newbalance3.webp';
+import thumbnail1 from '../images/newbalance2.jpg';
+import thumbnail2 from '../images/newbalance3.jpg';
 import './AuctionPage.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useState } from 'react';
