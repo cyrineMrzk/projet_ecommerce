@@ -12,6 +12,9 @@ from django.views.decorators.csrf import csrf_exempt
 from django.core.files.storage import default_storage
 import json
 from .models import *
+from django.template.loader import get_template
+from xhtml2pdf import pisa
+from django.conf import settings
 
 @api_view(['POST'])
 def register(request):
@@ -404,44 +407,6 @@ def debug(request):
             'traceback': traceback.format_exc()
         }, status=500)
 
-@api_view(['GET'])
-def product_debug(request, product_id):
-    try:
-        product = Product.objects.get(id=product_id)
-        
-        # Basic product info
-        data = {
-            'id': product.id,
-            'name': product.name,
-            'model_fields': {field.name: type(getattr(product, field.name)).__name__ 
-                            for field in product._meta.fields}
-        }
-        # Check images field
-        if hasattr(product, 'images'):
-            data['images_type'] = type(product.images).__name__
-            data['images_value'] = str(product.images)
-            
-            # If it's a string, try to parse it
-            if isinstance(product.images, str):
-                try:
-                    parsed = json.loads(product.images)
-                    data['images_parsed'] = parsed
-                except json.JSONDecodeError as e:
-                    data['images_parse_error'] = str(e)
-            
-            # If it's a file field
-            if hasattr(product.images, 'url'):
-                data['images_url'] = request.build_absolute_uri(product.images.url)
-        
-        return JsonResponse(data)
-    except Product.DoesNotExist:
-        return JsonResponse({'error': 'Product not found'}, status=404)
-    except Exception as e:
-        import traceback
-        return JsonResponse({
-            'error': str(e),
-            'traceback': traceback.format_exc()
-        }, status=500)
 
 # @api_view(['GET'])
 # @permission_classes([IsAuthenticated])
@@ -539,6 +504,7 @@ def get_my_products(request):
         return JsonResponse({"error": str(e)}, status=500)
 
 #http://127.0.0.1:8000/api/debug/
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def add_to_cart(request):
@@ -550,50 +516,59 @@ def add_to_cart(request):
         quantity = int(request.data.get('quantity', 1))
         color = request.data.get('color')
         size = request.data.get('size')
-
+        
         if not product_id:
             return JsonResponse({"error": "Product ID is required"}, status=400)
-
+        
         if not color or not size:
             return JsonResponse({"error": "Color and size are required"}, status=400)
-
+        
         # Fetch the product
         try:
             product = Product.objects.get(id=product_id)
         except Product.DoesNotExist:
             return JsonResponse({"error": "Product not found"}, status=404)
-
+        
         # Check if the product is in stock
         if not product.is_available or product.stock_quantity < quantity:
-            return JsonResponse({"error": "Insufficient stock"}, status=400)
-
+            return JsonResponse({"error": "product already in cart"}, status=400)
+        
         # Get or create the user's cart
-        cart, created = Cart.objects.get_or_create(user=request.user)
-
+        cart, _ = Cart.objects.get_or_create(user=request.user)
+        
         # Check if the product with the same color and size is already in the cart
-        cart_item, created = CartItem.objects.get_or_create(
-            cart=cart,
-            product=product,
-            color=color,
-            size=size,
-            defaults={'quantity': quantity}
-        )
-
-        if not created:
-            # Update the quantity if the item already exists
+        try:
+            cart_item = CartItem.objects.get(
+                cart=cart,
+                product=product,
+                color=color,
+                size=size
+            )
+            # Product already exists in cart, just update the quantity
             cart_item.quantity += quantity
             cart_item.save()
-
+            message = "Product quantity updated in cart"
+        except CartItem.DoesNotExist:
+            # Add new item to cart
+            CartItem.objects.create(
+                cart=cart,
+                product=product,
+                color=color,
+                size=size,
+                quantity=quantity
+            )
+            message = "Product added to cart successfully"
+        
         # Deduct the stock quantity
         product.stock_quantity -= quantity
         product.save()
-
-        return JsonResponse({"message": "Product added to cart successfully"}, status=200)
-
+        
+        return JsonResponse({"message": message}, status=200)
+    
     except Exception as e:
         print(traceback.format_exc())  # For debugging
         return JsonResponse({"error": str(e)}, status=500)
-
+    
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -817,6 +792,9 @@ def remove_from_favorites(request, product_id):
         return JsonResponse({"error": str(e)}, status=500)
 
 
+#orders_____________________________________________________________________________________________
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def checkout(request):
@@ -878,7 +856,179 @@ def checkout(request):
         print(traceback.format_exc())
         return JsonResponse({"error": str(e)}, status=500)
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_order(request):
+    """
+    Create a new order from either:
+    1. The user's cart (cart_id provided)
+    2. Direct purchase of a product (product_id, quantity, color, size provided)
+    """
+    try:
+        # Get data from request
+        cart_id = request.data.get('cart_id')
+        product_id = request.data.get('product_id')
+        shipping_address = request.data.get('shipping_address')
+        phone_number = request.data.get('phone_number')
+        
+        if not shipping_address or not phone_number:
+            return JsonResponse({"error": "Shipping address and phone number are required"}, status=400)
+        
+        # Initialize variables
+        order_items = []
+        total_amount = 0
+        
+        # Case 1: Order from cart
+        if cart_id:
+            try:
+                cart = Cart.objects.get(id=cart_id, user=request.user)
+                cart_items = CartItem.objects.filter(cart=cart)
+                
+                if not cart_items.exists():
+                    return JsonResponse({"error": "Your cart is empty"}, status=400)
+                
+                # Calculate total amount
+                total_amount = sum(item.subtotal for item in cart_items)
+                
+                # Prepare order items
+                for item in cart_items:
+                    order_items.append({
+                        'product': item.product,
+                        'quantity': item.quantity,
+                        'price': item.product.price,
+                        'color': item.color,
+                        'size': item.size
+                    })
+                
+            except Cart.DoesNotExist:
+                return JsonResponse({"error": "Cart not found"}, status=404)
+        
+        # Case 2: Direct purchase
+        elif product_id:
+            quantity = int(request.data.get('quantity', 1))
+            color = request.data.get('color')
+            size = request.data.get('size')
+            
+            if not color or not size:
+                return JsonResponse({"error": "Color and size are required for direct purchase"}, status=400)
+            
+            try:
+                product = Product.objects.get(id=product_id)
+                
+                # Check if product is available and in stock
+                if not product.is_available or product.stock_quantity < quantity:
+                    return JsonResponse({"error": "Product is not available or not enough in stock"}, status=400)
+                
+                # Calculate total amount
+                total_amount = product.price * quantity
+                
+                # Prepare order item
+                order_items.append({
+                    'product': product,
+                    'quantity': quantity,
+                    'price': product.price,
+                    'color': color,
+                    'size': size
+                })
+                
+            except Product.DoesNotExist:
+                return JsonResponse({"error": "Product not found"}, status=404)
+        
+        else:
+            return JsonResponse({"error": "Either cart_id or product_id must be provided"}, status=400)
+        
+        # Create the order
+        order = Order.objects.create(
+            user=request.user,
+            total_amount=total_amount,
+            status='pending',
+            shipping_address=shipping_address,
+            phone_number=phone_number
+        )
+        
+        # Create order items
+        for item_data in order_items:
+            OrderItem.objects.create(
+                order=order,
+                product=item_data['product'],
+                quantity=item_data['quantity'],
+                price=item_data['price'],
+                color=item_data['color'],
+                size=item_data['size']
+            )
+            
+            # Update product sales count and stock
+            product = item_data['product']
+            product.sales_count += item_data['quantity']
+            product.stock_quantity -= item_data['quantity']
+            product.save()
+        
+        # If order was from cart, clear the cart
+        if cart_id:
+            CartItem.objects.filter(cart__id=cart_id).delete()
+        
+        # Generate invoice
+        invoice_url = request.build_absolute_uri(f'/api/orders/{order.id}/invoice/')
+        
+        return JsonResponse({
+            "message": "Order created successfully",
+            "order_id": order.id,
+            "invoice_url": invoice_url
+        }, status=201)
+    
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        return JsonResponse({"error": str(e)}, status=500)
 
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def generate_invoice_pdf(request, order_id):
+    """
+    Generate a PDF invoice for a specific order
+    """
+    try:
+        try:
+            order = Order.objects.get(id=order_id, user=request.user)
+        except Order.DoesNotExist:
+            return JsonResponse({"error": "Order not found"}, status=404)
+        
+        # Get order items
+        items = OrderItem.objects.filter(order=order).select_related('product')
+        
+        # Prepare context for the template
+        context = {
+            'order': order,
+            'items': items,
+            'user': request.user,
+            'company_name': 'Your Company Name',
+            'company_address': 'Your Company Address',
+            'company_phone': 'Your Company Phone',
+            'company_email': 'your@email.com',
+        }
+        
+        # Get the template
+        template = get_template('invoice_template.html')
+        html = template.render(context)
+        
+        # Create a PDF response
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="invoice_{order.id}.pdf"'
+        
+        # Generate PDF
+        pisa_status = pisa.CreatePDF(html, dest=response)
+        
+        # Return the response
+        if pisa_status.err:
+            return JsonResponse({"error": "Failed to generate PDF"}, status=500)
+        return response
+    
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        return JsonResponse({"error": str(e)}, status=500)
+    
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_orders(request):
@@ -896,9 +1046,10 @@ def get_orders(request):
             items_data = []
             for item in items:
                 image_url = None
-                if hasattr(item.product, 'images') and item.product.images:
+                product_images = item.product.images.all()
+                if product_images.exists():
                     try:
-                        image_url = item.product.images.url
+                        image_url = product_images.first().image.url
                     except:
                         pass
                 
@@ -925,11 +1076,10 @@ def get_orders(request):
             })
         
         return JsonResponse({"orders": orders_data}, status=200)
-    
     except Exception as e:
+        import traceback
         print(traceback.format_exc())
         return JsonResponse({"error": str(e)}, status=500)
-
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -949,9 +1099,10 @@ def get_order_details(request, order_id):
         items_data = []
         for item in items:
             image_url = None
-            if hasattr(item.product, 'images') and item.product.images:
+            product_images = item.product.images.all()
+            if product_images.exists():
                 try:
-                    image_url = item.product.images.url
+                    image_url = product_images.first().image.url
                 except:
                     pass
             
@@ -979,11 +1130,10 @@ def get_order_details(request, order_id):
         }
         
         return JsonResponse({"order": order_data}, status=200)
-    
     except Exception as e:
+        import traceback
         print(traceback.format_exc())
         return JsonResponse({"error": str(e)}, status=500)
-
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])

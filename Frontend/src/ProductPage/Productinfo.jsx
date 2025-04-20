@@ -16,6 +16,13 @@ export default function ProductInfo({ product }) {
     const [showDetails, setShowDetails] = useState(false);
     const [thumbnails, setThumbnails] = useState([]);
     
+    // New state for checkout modal
+    const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+    const [shippingAddress, setShippingAddress] = useState('');
+    const [phoneNumber, setPhoneNumber] = useState('');
+    const [formErrors, setFormErrors] = useState({});
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    
     // Update state when product data is available
     useEffect(() => {
         if (product) {
@@ -161,13 +168,116 @@ export default function ProductInfo({ product }) {
         }
     };
 
-    // Buy now functionality
+    // Buy now functionality with modal
     const handleBuyNow = () => {
-        handleAddToCart();
-        // Navigate to checkout page
-        window.location.href = '/checkout';
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert('Please log in to purchase products.');
+            return;
+        }
+        
+        if (!selectedSize && availableSizes.length > 0) {
+            alert('Please select a size.');
+            return;
+        }
+        
+        // Open checkout modal instead of using prompts
+        setShowCheckoutModal(true);
     };
     
+    // Handle checkout form input change
+    const handleCheckoutInputChange = (e) => {
+        const { name, value } = e.target;
+        if (name === 'shippingAddress') {
+            setShippingAddress(value);
+        } else if (name === 'phoneNumber') {
+            setPhoneNumber(value);
+        }
+        
+        // Clear error for this field when user types
+        if (formErrors[name]) {
+            setFormErrors({
+                ...formErrors,
+                [name]: ''
+            });
+        }
+    };
+    
+    // Validate checkout form
+    const validateCheckoutForm = () => {
+        let errors = {};
+        let isValid = true;
+        
+        if (!shippingAddress.trim()) {
+            errors.shippingAddress = 'Shipping address is required';
+            isValid = false;
+        }
+        
+        if (!phoneNumber.trim()) {
+            errors.phoneNumber = 'Phone number is required';
+            isValid = false;
+        } else if (!/^[0-9+\s()-]{8,15}$/.test(phoneNumber.trim())) {
+            errors.phoneNumber = 'Please enter a valid phone number';
+            isValid = false;
+        }
+        
+        setFormErrors(errors);
+        return isValid;
+    };
+    
+    // Submit order
+    const submitOrder = async () => {
+        if (!validateCheckoutForm()) {
+            return;
+        }
+        
+        setIsSubmitting(true);
+        const token = localStorage.getItem('token');
+        
+        try {
+            const response = await fetch('http://127.0.0.1:8000/api/orders/create/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Token ${token}`
+                },
+                body: JSON.stringify({
+                    product_id: product.id,
+                    quantity: quantity,
+                    color: selectedColor || product.colors?.[0] || 'Black',
+                    size: selectedSize || product.sizes?.[0] || 'M',
+                    shipping_address: shippingAddress,
+                    phone_number: phoneNumber
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                setShowCheckoutModal(false);
+                alert('Order placed successfully!');
+                
+                // Offer to download the invoice
+                if (data.invoice_url) {
+                    const downloadInvoice = window.confirm('Would you like to download your invoice?');
+                    if (downloadInvoice) {
+                        window.open(data.invoice_url, '_blank');
+                    }
+                }
+                
+                // Redirect to orders page
+                window.location.href = '/orders';
+            } else {
+                alert(data.error || 'Failed to place order.');
+            }
+        } catch (error) {
+            console.error('Error placing order:', error);
+            alert('An error occurred while placing your order.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     return (
         <div className="productinfo">
             <div className="gallery">
@@ -266,6 +376,87 @@ export default function ProductInfo({ product }) {
                     </div>
                 </div>
             </div>
+            
+            {/* Checkout Modal */}
+            {showCheckoutModal && (
+                <div className="checkout-modal-overlay">
+                    <div className="checkout-modal">
+                        <div className="checkout-modal-header">
+                            <h3>Complete Your Purchase</h3>
+                            <button 
+                                className="close-modal-btn"
+                                onClick={() => setShowCheckoutModal(false)}
+                            >
+                                &times;
+                            </button>
+                        </div>
+                        <div className="checkout-modal-body">
+                            <div className="checkout-product-summary">
+                                <img 
+                                    src={getImageUrl(mainImage)} 
+                                    alt={product.name} 
+                                    className="checkout-product-image"
+                                />
+                                <div className="checkout-product-details">
+                                    <h4>{product.name}</h4>
+                                    <p>Price: {product.price} Da</p>
+                                    <p>Quantity: {quantity}</p>
+                                    {selectedColor && <p>Color: {selectedColor}</p>}
+                                    {selectedSize && <p>Size: {selectedSize}</p>}
+                                    <p className="checkout-total">Total: {product.price * quantity} Da</p>
+                                </div>
+                            </div>
+                            
+                            <form className="checkout-form">
+                                <div className="form-group">
+                                    <label htmlFor="shippingAddress">Shipping Address</label>
+                                    <textarea
+                                        id="shippingAddress"
+                                        name="shippingAddress"
+                                        value={shippingAddress}
+                                        onChange={handleCheckoutInputChange}
+                                        placeholder="Enter your full shipping address"
+                                        rows={3}
+                                    />
+                                    {formErrors.shippingAddress && (
+                                        <span className="error-message">{formErrors.shippingAddress}</span>
+                                    )}
+                                </div>
+                                
+                                <div className="form-group">
+                                    <label htmlFor="phoneNumber">Phone Number</label>
+                                    <input
+                                        type="tel"
+                                        id="phoneNumber"
+                                        name="phoneNumber"
+                                        value={phoneNumber}
+                                        onChange={handleCheckoutInputChange}
+                                        placeholder="Enter your phone number"
+                                    />
+                                    {formErrors.phoneNumber && (
+                                        <span className="error-message">{formErrors.phoneNumber}</span>
+                                    )}
+                                </div>
+                            </form>
+                        </div>
+                        <div className="checkout-modal-footer">
+                            <button 
+                                className="cancel-btn"
+                                onClick={() => setShowCheckoutModal(false)}
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                className="place-order-btn"
+                                onClick={submitOrder}
+                                disabled={isSubmitting}
+                            >
+                                {isSubmitting ? 'Processing...' : 'Place Order'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
