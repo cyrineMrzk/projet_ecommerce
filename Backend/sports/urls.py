@@ -8,7 +8,7 @@ urlpatterns = [
     path('debug/', debug, name='debug'),
     path('products/my/', get_my_products, name='get_my_products'),
     path('best-sellers/', best_sellers, name='best_sellers'),
-    #path('product-debug/<int:product_id>/',product_debug, name='product_debug'),
+    #path('orders/<int:order_id>/debug/', debug_invoice, name='debug_invoice'),
     path ('fetch', fetch_products_by_filtering, name='fetch_products_by_filtering'), 
       # Cart
     path('cart/', get_cart, name='get_cart'),

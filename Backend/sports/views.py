@@ -981,54 +981,31 @@ def create_order(request):
         print(traceback.format_exc())
         return JsonResponse({"error": str(e)}, status=500)
 
+from django.shortcuts import render
+from .models import Order, OrderItem
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
 def generate_invoice_pdf(request, order_id):
-    """
-    Generate a PDF invoice for a specific order
-    """
-    try:
-        try:
-            order = Order.objects.get(id=order_id, user=request.user)
-        except Order.DoesNotExist:
-            return JsonResponse({"error": "Order not found"}, status=404)
-        
-        # Get order items
-        items = OrderItem.objects.filter(order=order).select_related('product')
-        
-        # Prepare context for the template
-        context = {
-            'order': order,
-            'items': items,
-            'user': request.user,
-            'company_name': 'Your Company Name',
-            'company_address': 'Your Company Address',
-            'company_phone': 'Your Company Phone',
-            'company_email': 'your@email.com',
-        }
-        
-        # Get the template
-        template = get_template('invoice_template.html')
-        html = template.render(context)
-        
-        # Create a PDF response
-        response = HttpResponse(content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="invoice_{order.id}.pdf"'
-        
-        # Generate PDF
-        pisa_status = pisa.CreatePDF(html, dest=response)
-        
-        # Return the response
-        if pisa_status.err:
-            return JsonResponse({"error": "Failed to generate PDF"}, status=500)
-        return response
-    
-    except Exception as e:
-        import traceback
-        print(traceback.format_exc())
-        return JsonResponse({"error": str(e)}, status=500)
-    
+    # Get the order and its items
+    order = Order.objects.get(id=order_id)
+    items = OrderItem.objects.filter(order=order)
+    user = order.user
+    total_amount = sum(item.price * item.quantity for item in items)
+
+    # Context for the template
+    context = {
+        'order': order,
+        'user': user,
+        'items': items,
+        'total_amount': total_amount,
+        'company_name': 'Your Company',
+        'company_address': 'Your Address',
+        'company_phone': 'Your Phone',
+        'company_email': 'company@example.com'
+    }
+
+    # Render the template
+    return render(request, 'sports/invoice_template.html', context)
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_orders(request):

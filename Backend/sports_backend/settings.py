@@ -69,7 +69,10 @@ ROOT_URLCONF = 'sports_backend.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            BASE_DIR / 'templates',  # This should include your global template directory
+            BASE_DIR / 'your_app/templates',
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

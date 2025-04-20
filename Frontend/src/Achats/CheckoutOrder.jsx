@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './Checkout.css';
+import './CheckoutOrder.css';
 
 export default function Checkout() {
     const navigate = useNavigate();
