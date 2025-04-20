@@ -502,8 +502,11 @@ def get_my_products(request):
         import traceback
         print(traceback.format_exc())  # Print the full traceback for debugging
         return JsonResponse({"error": str(e)}, status=500)
-
+#to debug the functions we use : 
 #http://127.0.0.1:8000/api/debug/
+
+
+# Cart______________________________________________________________________________________________
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -568,7 +571,195 @@ def add_to_cart(request):
     except Exception as e:
         print(traceback.format_exc())  # For debugging
         return JsonResponse({"error": str(e)}, status=500)
+# Cart Views (updated to match product views style)
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_cart(request):
+    """
+    Get the authenticated user's cart with all items including product images.
+    """
+    try:
+        # Get or create the user's cart
+        cart, created = Cart.objects.get_or_create(user=request.user)
+        
+        # Get all items in the cart with related product data
+        cart_items = CartItem.objects.filter(cart=cart).select_related('product')
+        
+        # Format the response with detailed product information
+        items_data = []
+        for item in cart_items:
+            # Get all images for the product
+            product_images = item.product.images.all()
+            image_urls = [request.build_absolute_uri(image.image.url) for image in product_images] if product_images else []
+            
+            items_data.append({
+                "id": item.id,
+                "product": {
+                    "id": item.product.id,
+                    "name": item.product.name,
+                    "brand": item.product.brand,
+                    "price": float(item.product.price),
+                    "images": image_urls,
+                    "description": item.product.description,
+                    "category": item.product.category,
+                    "is_available": item.product.is_available
+                },
+                "quantity": item.quantity,
+                "color": item.color,
+                "size": item.size,
+                "subtotal": float(item.subtotal)
+            })
+        
+        return JsonResponse({
+            "cart_id": cart.id,
+            "items": items_data,
+            "total_amount": float(cart.total_amount),
+            "item_count": cart.item_count
+        }, status=200)
     
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({"error": "Failed to retrieve cart: " + str(e)}, status=500)
+
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_cart_item(request, item_id):
+    """
+    Update cart item quantity with proper stock management.
+    """
+    try:
+        quantity = int(request.data.get('quantity', 1))
+        
+        if quantity <= 0:
+            return JsonResponse({"error": "Quantity must be at least 1"}, status=400)
+        
+        # Get the cart item
+        try:
+            cart_item = CartItem.objects.get(id=item_id, cart__user=request.user)
+            product = cart_item.product
+        except CartItem.DoesNotExist:
+            return JsonResponse({"error": "Cart item not found"}, status=404)
+        
+        # Calculate quantity difference
+        quantity_diff = quantity - cart_item.quantity
+        
+        # Check stock availability if increasing quantity
+        if quantity_diff > 0:
+            if product.stock_quantity < quantity_diff:
+                return JsonResponse({
+                    "error": f"Only {product.stock_quantity} items available in stock",
+                    "max_available": product.stock_quantity + cart_item.quantity
+                }, status=400)
+        
+        # Update stock
+        product.stock_quantity -= quantity_diff
+        product.save()
+        
+        # Update cart item
+        cart_item.quantity = quantity
+        cart_item.save()
+        
+        # Return updated cart info
+        cart = cart_item.cart
+        return JsonResponse({
+            "message": "Cart updated successfully",
+            "item_id": cart_item.id,
+            "quantity": cart_item.quantity,
+            "subtotal": float(cart_item.subtotal),
+            "total_amount": float(cart.total_amount),
+            "item_count": cart.item_count
+        }, status=200)
+    
+    except ValueError:
+        return JsonResponse({"error": "Invalid quantity value"}, status=400)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({"error": "Failed to update cart: " + str(e)}, status=500)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def remove_from_cart(request, item_id):
+    """
+    Remove an item from cart and restore product stock.
+    """
+    try:
+        # Get the cart item
+        try:
+            cart_item = CartItem.objects.get(id=item_id, cart__user=request.user)
+            product = cart_item.product
+        except CartItem.DoesNotExist:
+            return JsonResponse({"error": "Cart item not found"}, status=404)
+        
+        # Restore product stock
+        product.stock_quantity += cart_item.quantity
+        product.save()
+        
+        # Get cart before deletion for response
+        cart = cart_item.cart
+        total_before = float(cart.total_amount)
+        count_before = cart.item_count
+        
+        # Delete the item
+        cart_item.delete()
+        
+        # Refresh cart data
+        cart.refresh_from_db()
+        
+        return JsonResponse({
+            "message": "Item removed from cart",
+            "removed_item_id": item_id,
+            "total_amount": float(cart.total_amount),
+            "item_count": cart.item_count,
+            "amount_removed": total_before - float(cart.total_amount),
+            "count_removed": count_before - cart.item_count
+        }, status=200)
+    
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({"error": "Failed to remove item: " + str(e)}, status=500)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def clear_cart(request):
+    """
+    Clear all items from the cart and restore all product stocks.
+    """
+    try:
+        cart, _ = Cart.objects.get_or_create(user=request.user)
+        cart_items = CartItem.objects.filter(cart=cart)
+        
+        # Restore all product stocks
+        for item in cart_items:
+            item.product.stock_quantity += item.quantity
+            item.product.save()
+        
+        # Record info before clearing
+        item_count = cart_items.count()
+        total_amount = float(cart.total_amount)
+        
+        # Clear the cart
+        cart_items.delete()
+        
+        return JsonResponse({
+            "message": "Cart cleared successfully",
+            "items_removed": item_count,
+            "amount_removed": total_amount,
+            "total_amount": 0.0,
+            "item_count": 0
+        }, status=200)
+    
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({"error": "Failed to clear cart: " + str(e)}, status=500)
+    
+#Favourite______________________________________________________________________________________________    
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -599,145 +790,6 @@ def add_to_favorites(request):
     except Exception as e:
         print(traceback.format_exc())  # For debugging
         return JsonResponse({"error": str(e)}, status=500)
-
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_cart(request):
-    """
-    Get the authenticated user's cart contents.
-    """
-    try:
-        # Get or create the user's cart
-        cart, created = Cart.objects.get_or_create(user=request.user)
-        
-        # Get all items in the cart
-        cart_items = CartItem.objects.filter(cart=cart).select_related('product')
-        
-        # Format the response
-        items_data = []
-        for item in cart_items:
-            image_url = None
-            if hasattr(item.product, 'images') and item.product.images:
-                try:
-                    image_url = item.product.images.url
-                except:
-                    pass
-            
-            items_data.append({
-                "id": item.id,
-                "product_id": item.product.id,
-                "name": item.product.name,
-                "brand": item.product.brand,
-                "price": float(item.product.price),
-                "quantity": item.quantity,
-                "color": item.color,
-                "size": item.size,
-                "subtotal": float(item.subtotal),
-                "image": image_url
-            })
-        
-        return JsonResponse({
-            "cart_id": cart.id,
-            "items": items_data,
-            "total_amount": float(cart.total_amount),
-            "item_count": cart.item_count
-        }, status=200)
-    
-    except Exception as e:
-        print(traceback.format_exc())
-        return JsonResponse({"error": str(e)}, status=500)
-
-
-@api_view(['PUT'])
-@permission_classes([IsAuthenticated])
-def update_cart_item(request, item_id):
-    """
-    Update the quantity of a cart item.
-    """
-    try:
-        quantity = int(request.data.get('quantity', 1))
-        
-        # Get the cart item
-        try:
-            cart_item = CartItem.objects.get(id=item_id, cart__user=request.user)
-        except CartItem.DoesNotExist:
-            return JsonResponse({"error": "Cart item not found"}, status=404)
-        
-        # Calculate quantity difference for stock adjustment
-        quantity_diff = quantity - cart_item.quantity
-        
-        # Check if there's enough stock if increasing quantity
-        if quantity_diff > 0 and (cart_item.product.stock_quantity < quantity_diff):
-            return JsonResponse({"error": "Insufficient stock"}, status=400)
-        
-        # Update the product stock
-        cart_item.product.stock_quantity -= quantity_diff
-        cart_item.product.save()
-        
-        # Update the cart item quantity
-        cart_item.quantity = quantity
-        cart_item.save()
-        
-        return JsonResponse({
-            "message": "Cart item updated successfully",
-            "cart_total": float(cart_item.cart.total_amount)
-        }, status=200)
-    
-    except Exception as e:
-        print(traceback.format_exc())
-        return JsonResponse({"error": str(e)}, status=500)
-
-
-@api_view(['DELETE'])
-@permission_classes([IsAuthenticated])
-def remove_from_cart(request, item_id=None):
-    """
-    Remove an item from the cart or clear the entire cart.
-    """
-    try:
-        cart = Cart.objects.get(user=request.user)
-        
-        if item_id:
-            # Remove specific item
-            try:
-                cart_item = CartItem.objects.get(id=item_id, cart=cart)
-                
-                # Return the quantity to product stock
-                cart_item.product.stock_quantity += cart_item.quantity
-                cart_item.product.save()
-                
-                cart_item.delete()
-                
-                return JsonResponse({
-                    "message": "Item removed from cart",
-                    "cart_total": float(cart.total_amount),
-                    "item_count": cart.item_count
-                }, status=200)
-            except CartItem.DoesNotExist:
-                return JsonResponse({"error": "Cart item not found"}, status=404)
-        else:
-            # Clear entire cart
-            cart_items = CartItem.objects.filter(cart=cart)
-            
-            # Return all quantities to product stock
-            for item in cart_items:
-                item.product.stock_quantity += item.quantity
-                item.product.save()
-            
-            cart_items.delete()
-            
-            return JsonResponse({
-                "message": "Cart cleared successfully",
-                "cart_total": 0,
-                "item_count": 0
-            }, status=200)
-    
-    except Exception as e:
-        print(traceback.format_exc())
-        return JsonResponse({"error": str(e)}, status=500)
-
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_favorites(request):
@@ -749,12 +801,14 @@ def get_favorites(request):
         
         favorites_data = []
         for favorite in favorites:
+            # Ensure the product has images and handle missing images
             image_url = None
-            if hasattr(favorite.product, 'images') and favorite.product.images:
-                try:
-                    image_url = favorite.product.images.url
-                except:
-                    pass
+            if hasattr(favorite.product, 'images') and favorite.product.images.exists():
+                image_url = favorite.product.images.first().image.url  # Get the first image URL
+            
+            # Fallback to a default image if no image exists
+            if not image_url:
+                image_url = '/placeholder-product.jpg'  # Path to a default image
             
             favorites_data.append({
                 "id": favorite.id,
@@ -790,6 +844,7 @@ def remove_from_favorites(request, product_id):
     except Exception as e:
         print(traceback.format_exc())
         return JsonResponse({"error": str(e)}, status=500)
+
 
 
 #orders_____________________________________________________________________________________________

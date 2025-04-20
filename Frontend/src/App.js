@@ -1,7 +1,5 @@
 import './App.css';
 import { Route,Routes,useLocation } from 'react-router-dom';
-import CheckoutOrder from './Achats/CheckoutOrder';
-import OrderConfirmation from './Achats/OrderConfirmation';
 import OrdersDashboard from './Achats/OrdersDashboard';
 import Signup from './signup/Signup';
 import Login from './Login/Login';
@@ -34,8 +32,6 @@ function App() {
     <Routes>
     <Route path="/" element={<Home />} />
     <Route path="contactus" element={<Contactus />} />
-    <Route path='checkout' element={<CheckoutOrder />} />
-    <Route path='orderconfirmation' element={<OrderConfirmation />} />
     <Route path='orders' element={<OrdersDashboard />} />
     <Route path="login" element={<Login/>} />
     <Route path="signup" element={<Signup/>} />
@@ -50,6 +46,7 @@ function App() {
     <Route path='/privacy&policy' element={<PrivacyPolicy/>}/>
     <Route path='/terms&conditions' element={<TermsAndConditions/>}/>
     <Route path='order-tracking' element={<OrderTracking />} />
+   
     <Route path='sellerdashboard' element={<SellerDashboard/>}/>
     <Route path='sellproducts' element={<SellProducts/>}/>
   </Routes>
