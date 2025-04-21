@@ -5,16 +5,13 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
-from django.contrib.auth import get_user_model
 from .serializers import UserSerializer
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.core.files.storage import default_storage
 import json
 from .models import *
-from django.template.loader import get_template
-from xhtml2pdf import pisa
-from django.conf import settings
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
 
 @api_view(['POST'])
 def register(request):
@@ -98,7 +95,23 @@ def create_product(request):
             stock_quantity=int(data.get("stock_quantity", 1)),
             is_available=data.get("is_available", "true").lower() == "true"
         )
-        
+         # If product is to be auctioned, create auction instance
+        if product.sale_type == "Auction":
+            try:
+                starting_bid = float(data.get("starting_bid", 0))
+                bid_increment = float(data.get("bid_increment", 5.00))
+                end_date = datetime.fromisoformat(data.get("end_date"))  # should be ISO format
+                Auction.objects.create(
+                    product=product,
+                    starting_bid=starting_bid,
+                    current_bid=starting_bid,
+                    bid_increment=bid_increment,
+                    end_date=end_date
+                )
+            except Exception as e:
+                product.delete()  # rollback
+                return JsonResponse({"error": f"Auction creation failed: {str(e)}"}, status=400)
+
         # Now add the images
         for image in images:
             ProductImage.objects.create(
@@ -322,90 +335,6 @@ def fetch_products_by_filtering(request):
         import traceback
         print(traceback.format_exc())
         return JsonResponse({'error': str(e)}, status=500)
-
-@api_view(['GET'])
-def debug(request):
-    try:
-        from django.db.models import Q
-
-        # Capture all raw input
-        query_params = dict(request.GET)
-
-        debug_output = {
-            "query_params": query_params,
-            "matched_product_ids": [],
-            "filtered_fields": {},
-            "product_snapshots": []
-        }
-
-        queryset = Product.objects.all()
-
-        category = request.GET.get('category')
-        brand = request.GET.get('brand')
-        gender = request.GET.get('gender')
-        color = request.GET.get('color')
-        size = request.GET.get('size')
-        min_price = request.GET.get('min_price', 0)
-        max_price = request.GET.get('max_price', 15000)
-
-        if category:
-            formatted_category = category.replace('-', ' ')
-            debug_output['filtered_fields']['category'] = [category, formatted_category]
-            queryset = queryset.filter(Q(category__icontains=category) | Q(category__icontains=formatted_category))
-
-        if brand and brand != 'all':
-            debug_output['filtered_fields']['brand'] = brand
-            queryset = queryset.filter(brand__iexact=brand)
-
-        if gender and gender != 'all':
-            debug_output['filtered_fields']['gender'] = gender
-            queryset = queryset.filter(sex__iexact=gender)
-
-        if color and color != 'all':
-            debug_output['filtered_fields']['color'] = color
-            try:
-                queryset = queryset.filter(colors__contains=[color])
-            except:
-                queryset = queryset.filter(colors__icontains=color)
-
-        if size and size != 'all':
-            debug_output['filtered_fields']['size'] = size
-            try:
-                size_val = int(size) if size.isdigit() else size
-                queryset = queryset.filter(sizes__contains=[size_val])
-            except:
-                queryset = queryset.filter(sizes__icontains=size)
-
-        try:
-            min_price_val = float(min_price)
-            max_price_val = float(max_price)
-            debug_output['filtered_fields']['price_range'] = [min_price_val, max_price_val]
-            queryset = queryset.filter(price__gte=min_price_val, price__lte=max_price_val)
-        except ValueError as ve:
-            debug_output['filtered_fields']['price_range'] = str(ve)
-
-        debug_output['matched_product_ids'] = list(queryset.values_list('id', flat=True))
-
-        for product in queryset[:10]:
-            debug_output['product_snapshots'].append({
-                'id': product.id,
-                'name': product.name,
-                'brand': product.brand,
-                'category': product.category,
-                'gender(sex)': product.sex,
-                'price': float(product.price),
-                'colors': product.colors,
-                'sizes': product.sizes
-            })
-
-        return JsonResponse(debug_output, status=200)
-
-    except Exception as e:
-        import traceback
-        return JsonResponse({
-            'error': str(e),
-            'traceback': traceback.format_exc()
-        }, status=500)
 
 
 # @api_view(['GET'])
@@ -1167,59 +1096,319 @@ def get_order_details(request, order_id):
         print(traceback.format_exc())
         return JsonResponse({"error": str(e)}, status=500)
 
+# Auctions______________________________________________________________________________________________
+
+@api_view(['GET'])
+def get_active_auctions(request):
+    """
+    Get all active auctions with their details
+    """
+    try:
+        active_auctions = Auction.objects.filter(
+            status='active',
+            end_date__gt=timezone.now()
+        ).select_related('product')
+        
+        auction_data = []
+        for auction in active_auctions:
+            auction_data.append({
+                'id': auction.id,
+                'product_id': auction.product.id,
+                'product_name': auction.product.name,
+                'category': auction.product.category,
+                'starting_bid': float(auction.starting_bid),
+                'current_bid': float(auction.current_bid),
+                'bid_increment': float(auction.bid_increment),
+                'end_date': auction.end_date.isoformat(),
+                'time_remaining': auction.time_remaining.total_seconds() if auction.time_remaining else None,
+                'highest_bidder': auction.highest_bidder.username if auction.highest_bidder else None,
+                'image_url': auction.product.images.first().image.url if auction.product.images.exists() else None
+            })
+        
+        return JsonResponse({'auctions': auction_data}, status=200)
+    
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@api_view(['GET'])
+def get_auction_details(request, auction_id):
+    """
+    Get detailed information about a specific auction
+    """
+    try:
+        auction = get_object_or_404(Auction, id=auction_id)
+        
+        # Get recent bids (last 10)
+        bids = Bid.objects.filter(auction=auction).order_by('-created_at')[:10]
+        bid_history = [{
+            'user': bid.user.username,
+            'amount': float(bid.amount),
+            'time': bid.created_at.isoformat()
+        } for bid in bids]
+        
+        # Get product images
+        images = [img.image.url for img in auction.product.images.all()]
+        
+        response_data = {
+            'id': auction.id,
+            'product': {
+                'id': auction.product.id,
+                'name': auction.product.name,
+                'description': auction.product.description,
+                'category': auction.product.category,
+                'images': images
+            },
+            'starting_bid': float(auction.starting_bid),
+            'current_bid': float(auction.current_bid),
+            'bid_increment': float(auction.bid_increment),
+            'start_date': auction.start_date.isoformat(),
+            'end_date': auction.end_date.isoformat(),
+            'status': auction.status,
+            'is_active': auction.is_active,
+            'highest_bidder': auction.highest_bidder.username if auction.highest_bidder else None,
+            'owner': auction.product.owner.username,
+            'bid_history': bid_history
+        }
+        
+        return JsonResponse(response_data, status=200)
+    
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def place_bid(request, auction_id):
+    """
+    Place a bid on an auction
+    """
+    try:
+        auction = get_object_or_404(Auction, id=auction_id)
+        data = json.loads(request.body)
+        bid_amount = float(data.get('amount', 0))
+        
+        # Validate bid amount
+        if bid_amount <= auction.current_bid:
+            return JsonResponse(
+                {'error': f'Bid must be higher than current bid of {auction.current_bid}'},
+                status=400
+            )
+        
+        # Check if auction is active
+        if not auction.is_active:
+            return JsonResponse({'error': 'This auction is no longer active'}, status=400)
+        
+        # Place the bid
+        if auction.place_bid(request.user, bid_amount):
+            return JsonResponse({
+                'success': 'Bid placed successfully',
+                'current_bid': float(auction.current_bid),
+                'highest_bidder': auction.highest_bidder.username if auction.highest_bidder else None
+            }, status=200)
+        else:
+            return JsonResponse({'error': 'Failed to place bid'}, status=400)
+    
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+from django.utils import timezone
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def create_auction(request):
     """
-    Create a new auction for a product.
+    Create a new auction for a product
     """
     try:
-        product_id = request.data.get('product_id')
-        start_price = float(request.data.get('start_price', 0))
-        end_date = request.data.get('end_date')
-        
-        if not product_id:
-            return JsonResponse({"error": "Product ID is required"}, status=400)
-        
-        if not start_price or start_price <= 0:
-            return JsonResponse({"error": "Valid start price is required"}, status=400)
-        
-        if not end_date:
-            return JsonResponse({"error": "End date is required"}, status=400)
+        data = json.loads(request.body)
+        product_id = data.get('product_id')
+        starting_bid = float(data.get('starting_bid', 0))
+        bid_increment = float(data.get('bid_increment', 5))
+        days_active = int(data.get('days_active', 7))
         
         # Get the product
-        try:
-            product = Product.objects.get(id=product_id, owner=request.user)
-        except Product.DoesNotExist:
-            return JsonResponse({"error": "Product not found or you don't own it"}, status=404)
+        product = get_object_or_404(Product, id=product_id, owner=request.user)
         
-        # Check if product already has an auction
+        # Check if product is already in an auction
         if hasattr(product, 'auction'):
-            return JsonResponse({"error": "Product already has an auction"}, status=400)
+            return JsonResponse({'error': 'This product is already in an auction'}, status=400)
         
-        # Update product sale type
+        # Set product to auction mode
         product.sale_type = 'Auction'
         product.save()
         
-        # Create the auction
-        from django.utils.dateparse import parse_datetime
-        end_datetime = parse_datetime(end_date)
-        
+        # Create the auction with timezone-aware datetimes
+        now = timezone.now()
         auction = Auction.objects.create(
             product=product,
-            start_price=start_price,
-            current_price=start_price,
-            end_date=end_datetime,
+            starting_bid=starting_bid,
+            current_bid=starting_bid,
+            bid_increment=bid_increment,
+            start_date=now,  # Using timezone.now() ensures it's timezone-aware
+            end_date=now + timezone.timedelta(days=days_active),
             status='active'
         )
         
         return JsonResponse({
-            "message": "Auction created successfully",
-            "auction_id": auction.id
+            'success': 'Auction created successfully',
+            'auction_id': auction.id,
+            'end_date': auction.end_date.isoformat()
         }, status=201)
     
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON data'}, status=400)
     except Exception as e:
-        print(traceback.format_exc())
-        return JsonResponse({"error": str(e)}, status=500)
-    
+        return JsonResponse({'error': str(e)}, status=500)
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def debug(request):
+    """
+    Debug version of auction creation to inspect all input and processing.
+    """
+    debug_info = {
+        "input_data": {},
+        "validated_data": {},
+        "product_check": None,
+        "auction_created": False,
+        "auction_details": {},
+        "errors": []
+    }
+
+    try:
+        # Parse and record raw JSON input
+        data = json.loads(request.body)
+        debug_info['input_data'] = data
+
+        # Extract and log validated fields
+        product_id = data.get('product_id')
+        starting_bid = float(data.get('starting_bid', 0))
+        bid_increment = float(data.get('bid_increment', 5))
+        days_active = int(data.get('days_active', 7))
+
+        debug_info['validated_data'] = {
+            "product_id": product_id,
+            "starting_bid": starting_bid,
+            "bid_increment": bid_increment,
+            "days_active": days_active
+        }
+
+        # Product ownership and existence check
+        try:
+            product = get_object_or_404(Product, id=product_id, owner=request.user)
+            debug_info['product_check'] = {
+                "product_exists": True,
+                "product_id": product.id,
+                "product_name": product.name
+            }
+        except Exception as e:
+            debug_info['product_check'] = {"error": str(e)}
+            raise
+
+        # Check if already in auction
+        if hasattr(product, 'auction'):
+            return JsonResponse({
+                "error": "This product is already in an auction",
+                "debug_info": debug_info
+            }, status=400)
+
+        # Update product sale type
+        product.sale_type = 'Auction'
+        product.save()
+
+        # Create auction
+        auction = Auction.objects.create(
+            product=product,
+            starting_bid=starting_bid,
+            current_bid=starting_bid,
+            bid_increment=bid_increment,
+            start_date=timezone.now(),
+            end_date=timezone.now() + timezone.timedelta(days=days_active),
+            status='active'
+        )
+        debug_info['auction_created'] = True
+        debug_info['auction_details'] = {
+            "auction_id": auction.id,
+            "start_date": auction.start_date.isoformat(),
+            "end_date": auction.end_date.isoformat()
+        }
+
+        return JsonResponse({
+            "success": "Auction created successfully",
+            "debug_info": debug_info
+        }, status=201)
+
+    except json.JSONDecodeError as je:
+        debug_info['errors'].append(str(je))
+        return JsonResponse({
+            "error": "Invalid JSON data",
+            "debug_info": debug_info
+        }, status=400)
+
+    except Exception as e:
+        debug_info['errors'].append(str(e))
+        return JsonResponse({
+            "error": str(e),
+            "traceback": traceback.format_exc(),
+            "debug_info": debug_info
+        }, status=500)
+    
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def close_auction(request, auction_id):
+    """
+    Close an auction (only accessible to auction owner)
+    """
+    try:
+        auction = get_object_or_404(Auction, id=auction_id)
+        
+        # Verify owner
+        if auction.product.owner != request.user:
+            return JsonResponse({'error': 'Only the auction owner can close this auction'}, status=403)
+        
+        # Close the auction
+        winner = auction.close_auction()
+        
+        response_data = {
+            'success': 'Auction closed successfully',
+            'status': auction.status,
+            'final_bid': float(auction.current_bid)
+        }
+        
+        if winner:
+            response_data['winner'] = winner.username
+        else:
+            response_data['message'] = 'Auction closed with no winning bids'
+        
+        return JsonResponse(response_data, status=200)
+    
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user_auctions(request):
+    """
+    Get all auctions for products owned by the current user
+    """
+    try:
+        auctions = Auction.objects.filter(product__owner=request.user).order_by('-start_date')
+        
+        auction_data = []
+        for auction in auctions:
+            auction_data.append({
+                'id': auction.id,
+                'product_name': auction.product.name,
+                'current_bid': float(auction.current_bid),
+                'status': auction.status,
+                'start_date': auction.start_date.isoformat(),
+                'end_date': auction.end_date.isoformat(),
+                'highest_bidder': auction.highest_bidder.username if auction.highest_bidder else None,
+                'bid_count': auction.bids.count()
+            })
+        
+        return JsonResponse({'auctions': auction_data}, status=200)
+    
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+    

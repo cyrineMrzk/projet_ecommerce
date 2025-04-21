@@ -15,9 +15,17 @@ export default function SellProducts() {
         price: "",
         saleType: "SellNow",
         images: [],
-        stock_quantity: 1, // New field
-        is_available: true // New field
+        stock_quantity: 1,
+        is_available: true
     });
+    
+    // New state for auction details
+    const [auctionDetails, setAuctionDetails] = useState({
+        starting_bid: "",
+        bid_increment: 5,
+        days_active: 7
+    });
+    
     const [errors, setErrors] = useState({
         images: "",
         category: ""
@@ -40,6 +48,12 @@ export default function SellProducts() {
         if (name === "category" && value) {
             setErrors({ ...errors, category: "" });
         }
+    };
+    
+    // Handler for auction fields
+    const handleAuctionChange = (e) => {
+        const { name, value } = e.target;
+        setAuctionDetails({ ...auctionDetails, [name]: value });
     };
 
     const handleFileChange = (e) => {
@@ -64,68 +78,90 @@ export default function SellProducts() {
         }));
     };
 
-    const handleListSubmit = async (e) => {
-        e.preventDefault();
-        let newErrors = { images: "", category: "" };
-        if (product.images.length < 1) {
-            newErrors.images = "Please upload at least 1 image.";
-        }
-        if (!product.category) {
-            newErrors.category = "Please select a category.";
-        }
-        setErrors(newErrors);
-        if (newErrors.images || newErrors.category) {
-            return;
-        }
+    // Inside handleListSubmit, remove auction API call section
+const handleListSubmit = async (e) => {
+    e.preventDefault();
+    let newErrors = { images: "", category: "" };
+    if (product.images.length < 1) {
+        newErrors.images = "Please upload at least 1 image.";
+    }
+    if (!product.category) {
+        newErrors.category = "Please select a category.";
+    }
+    setErrors(newErrors);
+    if (newErrors.images || newErrors.category) {
+        return;
+    }
 
-        const formData = new FormData();
-        formData.append("name", product.name);
-        formData.append("brand", product.brand);
-        formData.append("sex", product.sex);
-        formData.append("colors", JSON.stringify(product.colors));
-        formData.append("sizes", JSON.stringify(product.sizes));
-        formData.append("description", product.description);
-        formData.append("category", product.category);
-        formData.append("sale_type", product.saleType);
-        formData.append("price", product.price);
-        formData.append("stock_quantity", product.stock_quantity); // New field
-        formData.append("is_available", product.is_available); // New field
-        product.images.forEach(image => {
-            formData.append("images", image);
+    const formData = new FormData();
+    formData.append("name", product.name);
+    formData.append("brand", product.brand);
+    formData.append("sex", product.sex);
+    formData.append("colors", JSON.stringify(product.colors));
+    formData.append("sizes", JSON.stringify(product.sizes));
+    formData.append("description", product.description);
+    formData.append("category", product.category);
+    formData.append("sale_type", product.saleType);
+    formData.append("price", product.price);
+    formData.append("stock_quantity", product.stock_quantity);
+    formData.append("is_available", product.is_available);
+
+    // Conditionally add auction details
+    if (product.saleType === "Auction") {
+        formData.append("starting_bid", auctionDetails.starting_bid);
+        formData.append("bid_increment", auctionDetails.bid_increment);
+
+        const endDate = new Date();
+        endDate.setDate(endDate.getDate() + parseInt(auctionDetails.days_active));
+        formData.append("end_date", endDate.toISOString());
+    }
+
+    product.images.forEach(image => {
+        formData.append("images", image);
+    });
+
+    try {
+        const token = localStorage.getItem("token");
+
+        const response = await fetch("http://127.0.0.1:8000/api/products/", {
+            method: "POST",
+            headers: {
+                "Authorization": `Token ${token}`
+            },
+            body: formData
         });
 
-        try {
-            const token = localStorage.getItem("token");
-            const response = await fetch("http://127.0.0.1:8000/api/products/", {
-                method: "POST",
-                headers: {
-                    "Authorization": `Token ${token}`
-                },
-                body: formData
-            });
-            if (!response.ok) {
-                throw new Error("Failed to upload product.");
-            }
-            setSuccessMessage("Product listed successfully!");
-            setTimeout(() => setSuccessMessage(""), 3000);
-            setProduct({
-                name: "",
-                brand: "",
-                sex: "unisex",
-                colors: [],
-                sizes: [],
-                description: "",
-                category: "",
-                price: "",
-                saleType: "SellNow",
-                images: [],
-                stock_quantity: 1,
-                is_available: true
-            });
-        } catch (error) {
-            console.error("Error uploading product:", error);
+        if (!response.ok) {
+            throw new Error("Failed to upload product.");
         }
-    };
+
+        setSuccessMessage("Product listed successfully!");
+        setTimeout(() => setSuccessMessage(""), 3000);
+
+        // Reset form
+        setProduct({
+            name: "",
+            brand: "",
+            sex: "unisex",
+            colors: [],
+            sizes: [],
+            description: "",
+            category: "",
+            price: "",
+            saleType: "SellNow",
+            images: [],
+            stock_quantity: 1,
+            is_available: true
+        });
+        setAuctionDetails({
+            starting_bid: "",
+            bid_increment: 5,
+            days_active: 7
+        });
+    } catch (error) {
+        console.error("Error uploading product:", error);
+    }
+};
 
     return (
         <div className="sell-product">
@@ -163,10 +199,52 @@ export default function SellProducts() {
                         Auction
                     </label>
                 </div>
-                <label>Price (Da)</label>
-                <input type="number" name="price" value={product.price} onChange={handleChange} required />
-                <label>Stock Quantity</label>
-                <input type="number" name="stock_quantity" value={product.stock_quantity} onChange={handleChange} required />
+                
+                {/* Regular product fields */}
+                {product.saleType === "SellNow" && (
+                    <>
+                        <label>Price (Da)</label>
+                        <input type="number" name="price" value={product.price} onChange={handleChange} required />
+                        <label>Stock Quantity</label>
+                        <input type="number" name="stock_quantity" value={product.stock_quantity} onChange={handleChange} required />
+                    </>
+                )}
+                
+                {/* Auction fields */}
+                {product.saleType === "Auction" && (
+                    <div className="auction-fields">
+                        <h3>Auction Details</h3>
+                        <label>Starting Bid (Da)</label>
+                        <input 
+                            type="number" 
+                            name="starting_bid" 
+                            value={auctionDetails.starting_bid} 
+                            onChange={handleAuctionChange} 
+                            required 
+                        />
+                        <label>Bid Increment (Da)</label>
+                        <input 
+                            type="number" 
+                            name="bid_increment" 
+                            value={auctionDetails.bid_increment} 
+                            onChange={handleAuctionChange} 
+                            required 
+                        />
+                        <label>Auction Duration (days)</label>
+                        <input 
+                            type="number" 
+                            name="days_active" 
+                            value={auctionDetails.days_active} 
+                            onChange={handleAuctionChange} 
+                            required 
+                        />
+                        <label>Price (Da) - Base price for the product</label>
+                        <input type="number" name="price" value={product.price} onChange={handleChange} required />
+                        <label>Stock Quantity</label>
+                        <input type="number" name="stock_quantity" value={product.stock_quantity} onChange={handleChange} required />
+                    </div>
+                )}
+                
                 <label>Is Available</label>
                 <input type="checkbox" name="is_available" checked={product.is_available} onChange={handleChange} />
                 <label>Colors (comma separated)</label>

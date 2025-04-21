@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import dumbell from "../images/dumbell.jpg";
+//import dumbell from "../images/dumbell.jpg";
 import ProductCard from "../ProductCard/ProductCard";
 import './Products.css';
 import { useLocation } from "react-router-dom";

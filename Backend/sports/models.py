@@ -1,8 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
-from django.db.models.signals import post_save
-from django.dispatch import receiver
 from django.db import models
+from datetime import datetime
 
 class Product(models.Model):
     SALE_TYPES = [
@@ -141,7 +140,6 @@ class OrderItem(models.Model):
     @property
     def subtotal(self):
         return self.price * self.quantity
-
 class Auction(models.Model):
     STATUS_CHOICES = [
         ('active', 'Active'),
@@ -150,15 +148,17 @@ class Auction(models.Model):
     ]
     
     product = models.OneToOneField(Product, on_delete=models.CASCADE, related_name="auction")
-    start_price = models.DecimalField(max_digits=10, decimal_places=2)
-    current_price = models.DecimalField(max_digits=10, decimal_places=2)
+    starting_bid = models.DecimalField(max_digits=10, decimal_places=2)
+    current_bid = models.DecimalField(max_digits=10, decimal_places=2)
+    bid_increment = models.DecimalField(max_digits=10, decimal_places=2, default=5.00)
+    start_date = models.DateTimeField(default=datetime.now)
     end_date = models.DateTimeField()
+    highest_bidder = models.ForeignKey(get_user_model(), on_delete=models.SET_NULL, null=True, blank=True, related_name='won_auctions')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
-    winner = models.ForeignKey(get_user_model(), on_delete=models.SET_NULL, null=True, blank=True, related_name="won_auctions")
     created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
-        return f"Auction for {self.product.name} (Current: {self.current_price})"
+        return f"Auction for {self.product.name}"
     
     @property
     def is_active(self):
@@ -171,24 +171,38 @@ class Auction(models.Model):
         if self.is_active:
             return self.end_date - timezone.now()
         return None
+    
+    def place_bid(self, user, amount):
+        if amount > self.current_bid and self.is_active:
+            self.current_bid = amount
+            self.highest_bidder = user
+            self.save()
+            
+            # Create bid history entry
+            Bid.objects.create(
+                auction=self,
+                user=user,
+                amount=amount
+            )
+            return True
+        return False
+    
+    def close_auction(self):
+        if self.status == 'active':
+            self.status = 'ended'
+            self.save()
+            # You could trigger notification here
+            return self.highest_bidder
+        return None
 
 class Bid(models.Model):
-    auction = models.ForeignKey(Auction, on_delete=models.CASCADE, related_name="bids")
-    user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name="bids")
+    auction = models.ForeignKey(Auction, on_delete=models.CASCADE, related_name='bids')
+    user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='bids')
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        ordering = ['-amount']  # Highest bid first
+        ordering = ['-amount', '-created_at']  # Highest bid first, then most recent
     
     def __str__(self):
-        return f"Bid of {self.amount} by {self.user.username} on {self.auction.product.name}"
-
-@receiver(post_save, sender=get_user_model())
-def create_user_cart(sender, instance, created, **kwargs):
-    """Create a cart for new users automatically"""
-    if created:
-        Cart.objects.create(user=instance)
-
-
-#http://127.0.0.1:8000/api/debug/
+        return f"{self.user.username} bid {self.amount} on {self.auction.product.name}"

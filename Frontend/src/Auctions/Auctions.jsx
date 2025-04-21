@@ -1,41 +1,51 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import AuctionCard from "../AuctionCard/AuctionCard";
 import './Auctions.css';
-const auctionProducts = [
-    {
-        id: 1,
-        name: "Dumbbell Set",
-        type: "Weightlifting Equipment",
-        auctionEnd: Date.now() + 3600000, // 1 hour from now
-        startingBid: 5000,
-        bidIncrement: 500,
-    },
-    {
-        id: 2,
-        name: "Bench Press Machine",
-        type: "Gym Equipment",
-        auctionEnd: Date.now() + 7200000, // 2 hours from now
-        startingBid: 15000,
-        bidIncrement: 1000,
-    },
-    {
-        id: 3,
-        name: "Kettlebell Set",
-        type: "Weightlifting Equipment",
-        auctionEnd: Date.now() + 5400000, // 1.5 hours from now
-        startingBid: 7000,
-        bidIncrement: 700,
-    }
-];
-export default function Auctions(){
-    return(
+
+export default function Auctions() {
+    const [auctions, setAuctions] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        // Fetch active auctions from the backend
+        const fetchAuctions = async () => {
+            try {
+                setLoading(true);
+                const response = await fetch('http://127.0.0.1:8000/api/auctions/');
+                
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch auctions: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                setAuctions(data);
+            } catch (err) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+        
+        fetchAuctions();
+    }, []);
+
+    if (loading) return <div>Loading auctions...</div>;
+    if (error) return <div>Error: {error}</div>;
+
+    return (
         <div className="auctions-page">
-        <h1>Live Auctions</h1>
-        <div className="auctions-grid">
-            {auctionProducts.map((product) => (
-                <AuctionCard key={product.id} product={product} />
-            ))}
+            <h1>Live Auctions</h1>
+            <div className="auctions-grid">
+                {auctions.length > 0 ? (
+                    auctions.map((auction) => (
+                        <AuctionCard key={auction.id} auction={auction} />
+                    ))
+                ) : (
+                    <p>No active auctions available at the moment.</p>
+                )}
+            </div>
         </div>
-    </div>
-    )
+    );
 }

@@ -40,13 +40,12 @@ function App() {
     <Route path="cart" element={<Cart/>} />
     <Route path="favorite" element={<Favorite/>} />
     <Route path='auctions' element={<Auctions/>}/>
-    <Route path="auctions/auction" element={<Auctionpage/>}/>
+    <Route path="auctions/:auctionId" element={<Auctionpage/>}/>
     <Route path='aboutus' element={<AboutUs/>}/>
     <Route path='/faq' element={<Faq/>}/>
     <Route path='/privacy&policy' element={<PrivacyPolicy/>}/>
     <Route path='/terms&conditions' element={<TermsAndConditions/>}/>
     <Route path='order-tracking' element={<OrderTracking />} />
-   
     <Route path='sellerdashboard' element={<SellerDashboard/>}/>
     <Route path='sellproducts' element={<SellProducts/>}/>
   </Routes>

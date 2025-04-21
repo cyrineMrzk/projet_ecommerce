@@ -30,5 +30,10 @@ urlpatterns = [
     path('orders/<int:order_id>/invoice/', generate_invoice_pdf, name='generate_invoice_pdf'),
 
     # Auctions
-    path('auctions/create/', create_auction, name='create_auction'),
-]
+    path('auctions/', get_active_auctions, name='active-auctions'),
+    path('auctions/<int:auction_id>/', get_auction_details, name='auction-detail'),
+    path('auctions/<int:auction_id>/bid/', place_bid, name='place-bid'),
+    path('auctions/<int:auction_id>/close/', close_auction, name='close-auction'),
+    path('auctions/create/', create_auction, name='create-auction'),
+    path('auctions/my-auctions/', get_user_auctions, name='user-auctions'),
+    ]

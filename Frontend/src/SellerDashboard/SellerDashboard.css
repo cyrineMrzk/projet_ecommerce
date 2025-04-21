@@ -1,4 +1,3 @@
-
 .seller-dashboard {
     max-width: 800px;
     margin: 40px auto;
@@ -103,4 +102,148 @@
 .seller-dashboard .active {
     background: #28a745;
     color: white;
+}
+
+/* Add these styles to your existing SellerDashboard.css file */
+
+.seller-dashboard {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.dashboard-section {
+    margin-bottom: 40px;
+}
+
+/* Auction styles */
+.add-auction-btn {
+    display: inline-block;
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 4px;
+    text-decoration: none;
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+.add-auction-btn:hover {
+    background-color: #45a049;
+}
+
+.action-message {
+    padding: 10px 15px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.no-auctions {
+    color: #6c757d;
+    font-style: italic;
+    margin: 30px 0;
+    text-align: center;
+}
+
+.auctions-table {
+    overflow-x: auto;
+}
+
+.auctions-table table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.auctions-table th, 
+.auctions-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.auctions-table th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+}
+
+.auctions-table tr:hover {
+    background-color: #f5f5f5;
+}
+
+.status {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: bold;
+    margin-right: 8px;
+}
+
+.status-active {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-closed {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.status-pending {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.auction-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.view-btn, .close-btn {
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    cursor: pointer;
+    text-align: center;
+}
+
+.view-btn {
+    background-color: #007bff;
+    color: white;
+    text-decoration: none;
+}
+
+.view-btn:hover {
+    background-color: #0069d9;
+}
+
+.close-btn {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+}
+
+.close-btn:hover {
+    background-color: #c82333;
+}
+
+/* New styles for the auction-item-close button */
+.auction-item-close {
+    display: inline-block;
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
+@media (max-width: 768px) {
+    .auctions-table {
+        font-size: 0.9em;
+    }
+    
+    .auction-actions {
+        flex-direction: column;
+    }
 }

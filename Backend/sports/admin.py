@@ -55,14 +55,6 @@ class OrderItemAdmin(admin.ModelAdmin):
         return f"${obj.subtotal}"
     subtotal.admin_order_field = 'price'
 
-@admin.register(Auction)
-class AuctionAdmin(admin.ModelAdmin):
-    list_display = ('product', 'start_price', 'current_price', 'end_date', 'status', 'winner')
-    search_fields = ('product__name', 'winner__username')
-    list_filter = ('status', 'created_at', 'end_date')
-    date_hierarchy = 'created_at'
-    readonly_fields = ('current_price',)
-
 @admin.register(Bid)
 class BidAdmin(admin.ModelAdmin):
     list_display = ('auction', 'user', 'amount', 'created_at')
@@ -70,3 +62,9 @@ class BidAdmin(admin.ModelAdmin):
     list_filter = ('created_at',)
     date_hierarchy = 'created_at'
 
+@admin.register(Auction)
+class AuctionAdmin(admin.ModelAdmin):
+    list_display = ('product', 'starting_bid', 'current_bid', 'start_date', 'end_date', 'highest_bidder', 'status')
+    list_filter = ('status',)
+    search_fields = ('product__name',)
+    readonly_fields = ('current_bid',)  
